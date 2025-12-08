@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Behavioral Lab V7 - Auto AI</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <title>Behavioral Lab V8 - Final</title>
+    <script src="[https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js](https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js)"></script>
     <style>
         :root { --bg: #f0f2f5; --primary: #2c3e50; --accent: #3498db; --pos: #27ae60; --neg: #c0392b; }
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin: 0; padding: 0; color: #333; }
@@ -32,16 +31,27 @@
         .strategy-box { margin-top: 10px; padding-top: 10px; border-top: 1px dashed #ddd; }
         .strategy-label { font-size: 0.7rem; font-weight: bold; color: var(--neg); text-transform: uppercase; display: block; }
 
-        /* AI REPORT VIEW */
+        /* AI REPORT VIEW (EDITABLE) */
         #ai-report-view { background: white; padding: 40px; margin: 20px auto; max-width: 800px; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
-        .manifesto-content { line-height: 1.6; color: #444; }
-        .manifesto-content h1, .manifesto-content h2 { color: var(--primary); border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        
+        .manifesto-content { 
+            line-height: 1.6; color: #444; 
+            outline: 2px dashed #eee; /* Visual cue that it's editable */
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .manifesto-content:focus { outline: 2px solid var(--accent); background: #fdfdfd; }
+        
+        /* Styles injected by AI HTML */
+        .manifesto-content h1 { color: var(--primary); border-bottom: 2px solid #eee; padding-bottom: 10px; margin-top: 0; }
+        .manifesto-content h2 { color: var(--primary); margin-top: 30px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
         .manifesto-content ul { list-style: none; padding: 0; }
-        .manifesto-content li { margin-bottom: 10px; padding-left: 25px; position: relative; }
+        .manifesto-content li { margin-bottom: 12px; padding-left: 25px; position: relative; font-size: 1.1rem; }
         .manifesto-content li::before { content: "✔"; color: var(--pos); position: absolute; left: 0; font-weight: bold; }
-        .faq-item { margin-bottom: 15px; border-left: 4px solid var(--accent); padding-left: 15px; background: #f9fbfd; padding: 15px; border-radius: 0 5px 5px 0; }
-        .faq-q { font-weight: bold; color: #c0392b; display: block; margin-bottom: 5px; }
-        .faq-a { font-style: italic; color: #2c3e50; }
+        
+        .faq-item { margin-bottom: 15px; border-left: 4px solid var(--accent); padding: 15px; background: #f8fbff; border-radius: 0 8px 8px 0; }
+        .faq-q { font-weight: bold; color: #c0392b; display: block; margin-bottom: 5px; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.5px; }
+        .faq-a { font-style: italic; color: #2c3e50; font-weight: 500; }
 
         /* BUTTONS */
         .btn-action { background: var(--primary); color: white; border: none; padding: 12px 25px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; }
@@ -60,9 +70,12 @@
         @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
         @media print {
-            .top-bar, .btn-action, .no-print, #qr-box, #host-panel, #lobby-view, .edit-icon { display: none !important; }
-            body { background: white; }
+            .top-bar, .btn-action, .no-print, #qr-box, #host-panel, #lobby-view, .edit-icon, .close-btn { display: none !important; }
+            body { background: white; margin: 0; padding: 0; }
             #ai-report-view { display: block !important; box-shadow: none; margin: 0; padding: 0; width: 100%; max-width: 100%; }
+            .manifesto-content { outline: none; border: none; } /* Rimuove i bordi di edit in stampa */
+            .manifesto-content h1 { font-size: 24pt; }
+            .faq-item { break-inside: avoid; }
         }
     </style>
 </head>
@@ -75,7 +88,7 @@
             <input type="password" id="api-key-input" placeholder="Incolla qui la chiave API..." />
             <button class="btn-action" onclick="detectAndSaveKey()">VERIFICA E SALVA</button>
             <div id="model-status" class="model-status"></div>
-            <p style="font-size:0.8rem; margin-top:15px;"><a href="https://aistudio.google.com/app/apikey" target="_blank">Ottieni una chiave gratis qui</a></p>
+            <p style="font-size:0.8rem; margin-top:15px;"><a href="[https://aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)" target="_blank">Ottieni una chiave gratis qui</a></p>
             <button onclick="toggleSettings()" style="background:none; border:none; color:#999; cursor:pointer; margin-top:10px;">Chiudi</button>
         </div>
     </div>
@@ -116,11 +129,15 @@
         </div>
 
         <div id="ai-report-view" class="hidden">
-            <div class="no-print" style="text-align:right; margin-bottom:10px;">
-                <button onclick="closeReport()" style="cursor:pointer; background:none; border:none; color:#999; margin-right:15px;">✖ Torna alla lavagna</button>
-                <button class="btn-action" onclick="window.print()">🖨️ STAMPA PDF</button>
+            <div class="no-print" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <div style="font-size:0.9rem; color:#666;">✏️ <b>Tip:</b> Clicca sul testo per modificarlo prima di stampare.</div>
+                <div>
+                    <button class="close-btn" onclick="closeReport()" style="cursor:pointer; background:none; border:none; color:#999; margin-right:15px;">✖ Torna alla lavagna</button>
+                    <button class="btn-action" onclick="window.print()">🖨️ STAMPA PDF</button>
+                </div>
             </div>
-            <div id="manifesto-content" class="manifesto-content">
+            
+            <div id="manifesto-content" class="manifesto-content" contenteditable="true">
                 <div style="text-align:center; padding:50px; color:#999;">
                     <div style="font-size:2rem; animation: pulse 1s infinite;">🤖</div>
                     <p>Sto analizzando i modelli disponibili e generando il manifesto...</p>
@@ -165,7 +182,7 @@
         
         if(isHost) roomId = Math.floor(1000 + Math.random() * 9000).toString();
         
-        const NTFY = `https://ntfy.sh/blab-v7-${roomId}`;
+        const NTFY = `https://ntfy.sh/blab-v8-${roomId}`;
         let participants = [];
         let rawData = { pos: [], neg: [] };
 
@@ -242,7 +259,7 @@
             }
         }
 
-        // --- AI LOGIC (AUTO-DETECT) ---
+        // --- AI LOGIC (AUTO-DETECT + CLEANING) ---
         function toggleSettings() { 
             document.getElementById('settings-modal').classList.toggle('hidden'); 
             document.getElementById('model-status').innerText = ""; 
@@ -257,33 +274,24 @@
             statusEl.className = "model-status";
 
             try {
-                // 1. Chiedi a Google la lista dei modelli
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}`);
                 if(!response.ok) throw new Error("Chiave non valida");
                 const data = await response.json();
                 
-                // 2. Filtra per "flash" e "generateContent"
-                // Esempio: gemini-1.5-flash, gemini-2.0-flash-exp, etc.
                 const flashModels = data.models.filter(m => 
                     m.name.includes('flash') && 
                     m.supportedGenerationMethods.includes('generateContent')
                 );
 
                 if(flashModels.length === 0) throw new Error("Nessun modello Flash trovato.");
-
-                // 3. Ordina per versione (decrescente: 2.0 prima di 1.5)
-                // Usiamo localeCompare con opzione numerica per gestire versioni tipo 1.5 vs 1.0 vs 2.0
                 flashModels.sort((a, b) => b.name.localeCompare(a.name, undefined, { numeric: true, sensitivity: 'base' }));
+                const bestModel = flashModels[0].name.replace('models/', '');
 
-                const bestModel = flashModels[0].name.replace('models/', ''); // Rimuove prefisso "models/"
-
-                // 4. Salva
                 localStorage.setItem('gemini_key', key);
                 localStorage.setItem('gemini_model', bestModel);
 
                 statusEl.innerText = `✅ Agganciato: ${bestModel}`;
                 statusEl.classList.add('success-text');
-                
                 setTimeout(() => toggleSettings(), 2000);
 
             } catch(e) {
@@ -297,8 +305,6 @@
             let model = localStorage.getItem('gemini_model');
 
             if(!apiKey) return toggleSettings();
-            
-            // Fallback se non è stato fatto l'auto-detect
             if(!model) model = "gemini-1.5-flash"; 
 
             document.getElementById('board-view').classList.add('hidden');
@@ -312,14 +318,17 @@
             Positives (Assets): ${JSON.stringify(rawData.pos.map(p => p.text))}
             Negatives (Issues + Strategies): ${JSON.stringify(rawData.neg.map(n => ({issue: n.issue, protocol: n.strat})))}
 
-            OUTPUT FORMAT (HTML):
-            1. Title: "Team Manifesto: I Nostri Standard".
-            2. Section "Lo Standard Aureo": Take the Positives, rewrite them as inspiring "We..." statements (e.g. "Ci impegniamo a..."). Present as an unnumbered list.
-            3. Section "Protocolli Operativi (FAQ)": Take the Negatives/Strategies. Format them strictly as a FAQ style list.
-               Format: "<div class='faq-item'><span class='faq-q'>SE succede che... [behavior description]</span> <span class='faq-a'>ALLORA noi... [agreed strategy]</span></div>"
+            OUTPUT FORMAT (Strict HTML):
+            1. Title (H1): "Manifesto del Team: I Nostri Standard".
+            2. Section H2 "Lo Standard Aureo": Rewrite positives as inspiring "Ci impegniamo a..." statements. Use <ul> and <li>.
+            3. Section H2 "Protocolli Operativi (FAQ)": Use strictly this HTML structure for EACH item:
+               <div class='faq-item'>
+                 <span class='faq-q'>SE [descrizione comportamento]...</span>
+                 <span class='faq-a'>ALLORA noi [strategia concordata]</span>
+               </div>
             
-            Tone: Professional, constructive, action-oriented. Language: ITALIAN.
-            Do not include markdown code blocks like \`\`\`html. Just return the raw HTML content.
+            IMPORTANT: Return ONLY the HTML code. Do NOT use Markdown formatting (no \`\`\`html blocks). Do NOT use \`\`\`.
+            Tone: Professional, constructive. Language: ITALIAN.
             `;
 
             try {
@@ -330,10 +339,14 @@
                 });
                 
                 const data = await response.json();
-                const aiText = data.candidates[0].content.parts[0].text;
-                document.getElementById('manifesto-content').innerHTML = marked.parse(aiText);
+                let aiText = data.candidates[0].content.parts[0].text;
+                
+                // PULIZIA AGGRESSIVA: Rimuove eventuali backticks rimasti
+                aiText = aiText.replace(/```html/g, '').replace(/```/g, '');
+
+                document.getElementById('manifesto-content').innerHTML = aiText;
             } catch (error) {
-                document.getElementById('manifesto-content').innerHTML = `<p style='color:red; text-align:center'>Errore generazione (${model}): ${error}<br>Prova a verificare la chiave nelle impostazioni.</p>`;
+                document.getElementById('manifesto-content').innerHTML = `<p style='color:red; text-align:center'>Errore generazione (${model}): ${error}<br>Controlla la chiave API.</p>`;
             }
         }
 
