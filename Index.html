@@ -3,297 +3,379 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Workshop Dinamiche V4</title>
+    <title>Behavioral Lab V7 - Auto AI</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
-        :root { --bg: #f4f6f8; --primary: #34495e; --accent: #3498db; --pos: #27ae60; --neg: #e74c3c; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 0; color: #333; }
+        :root { --bg: #f0f2f5; --primary: #2c3e50; --accent: #3498db; --pos: #27ae60; --neg: #c0392b; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin: 0; padding: 0; color: #333; }
         .hidden { display: none !important; }
 
         /* HEADER */
         .top-bar { background: #fff; padding: 15px 30px; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center; }
-        .brand { font-weight: 700; color: var(--primary); }
-        .status-badge { background: #eee; padding: 5px 15px; border-radius: 20px; font-size: 0.85rem; display: flex; align-items: center; gap: 8px; }
-        .dot { width: 10px; height: 10px; border-radius: 50%; background: #bdc3c7; }
-        .dot.active { background: var(--pos); }
-
-        /* LAYOUTS */
-        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
-        
-        /* HOST: LOBBY */
-        #lobby-view { text-align: center; margin-top: 50px; }
-        .lobby-list { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin: 30px 0; }
-        .participant-tag { background: white; padding: 10px 20px; border-radius: 30px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); font-weight: bold; animation: popIn 0.3s ease; }
-        .btn-start { background: var(--primary); color: white; padding: 15px 40px; font-size: 1.5rem; border: none; border-radius: 50px; cursor: pointer; transition: 0.2s; }
-        .btn-start:hover { transform: scale(1.05); background: #2c3e50; }
+        .brand { font-weight: 800; color: var(--primary); letter-spacing: 1px; }
+        .controls { display: flex; gap: 15px; align-items: center; }
+        .icon-btn { cursor: pointer; font-size: 1.2rem; background: none; border: none; padding: 5px; opacity: 0.6; transition: 0.2s; }
+        .icon-btn:hover { opacity: 1; transform: rotate(90deg); }
 
         /* HOST: BOARD */
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
         .board-grid { display: flex; gap: 30px; margin-top: 20px; }
-        .column { flex: 1; background: white; border-radius: 10px; padding: 20px; min-height: 60vh; box-shadow: 0 5px 15px rgba(0,0,0,0.05); border-top: 5px solid #ccc; }
+        .column { flex: 1; background: white; border-radius: 12px; padding: 20px; min-height: 60vh; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-top: 6px solid #ccc; }
         .col-left { border-top-color: var(--pos); } .col-right { border-top-color: var(--neg); }
-        .card { padding: 15px; margin-bottom: 15px; border-radius: 5px; border: 1px solid #eee; background: #fafafa; border-left-width: 5px; animation: slideUp 0.4s; }
+        .col-title { text-align: center; color: var(--primary); margin-bottom: 20px; text-transform: uppercase; font-size: 0.9rem; letter-spacing: 1px; }
+
+        /* CARDS */
+        .card { padding: 15px; margin-bottom: 12px; background: #fafafa; border: 1px solid #e0e0e0; border-left-width: 5px; border-radius: 6px; position: relative; animation: slideUp 0.3s; }
         .card-pos { border-left-color: var(--pos); } .card-neg { border-left-color: var(--neg); }
-        
-        /* PHONE: LOGIN & TARGET */
-        #phone-view { max-width: 500px; margin: 0 auto; background: white; min-height: 100vh; padding: 30px; box-sizing: border-box; }
-        input[type="text"] { width: 100%; padding: 15px; border: 2px solid #ddd; border-radius: 8px; font-size: 1.1rem; box-sizing: border-box; margin-bottom: 20px; }
-        .target-reveal { background: #ebf5fb; padding: 20px; border-radius: 10px; text-align: center; margin-bottom: 30px; border: 2px dashed var(--accent); }
-        .target-name { font-size: 1.8rem; font-weight: 800; color: var(--primary); display: block; margin-top: 10px; text-transform: uppercase; }
-        
-        textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; margin-bottom: 10px; font-family: inherit; }
-        .btn-send { width: 100%; padding: 15px; background: var(--accent); color: white; border: none; border-radius: 8px; font-size: 1.2rem; cursor: pointer; }
-        
-        /* UTILS */
+        .edit-icon { cursor: pointer; float: right; opacity: 0.2; } .edit-icon:hover { opacity: 1; }
+        .strategy-box { margin-top: 10px; padding-top: 10px; border-top: 1px dashed #ddd; }
+        .strategy-label { font-size: 0.7rem; font-weight: bold; color: var(--neg); text-transform: uppercase; display: block; }
+
+        /* AI REPORT VIEW */
+        #ai-report-view { background: white; padding: 40px; margin: 20px auto; max-width: 800px; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        .manifesto-content { line-height: 1.6; color: #444; }
+        .manifesto-content h1, .manifesto-content h2 { color: var(--primary); border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .manifesto-content ul { list-style: none; padding: 0; }
+        .manifesto-content li { margin-bottom: 10px; padding-left: 25px; position: relative; }
+        .manifesto-content li::before { content: "✔"; color: var(--pos); position: absolute; left: 0; font-weight: bold; }
+        .faq-item { margin-bottom: 15px; border-left: 4px solid var(--accent); padding-left: 15px; background: #f9fbfd; padding: 15px; border-radius: 0 5px 5px 0; }
+        .faq-q { font-weight: bold; color: #c0392b; display: block; margin-bottom: 5px; }
+        .faq-a { font-style: italic; color: #2c3e50; }
+
+        /* BUTTONS */
+        .btn-action { background: var(--primary); color: white; border: none; padding: 12px 25px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .btn-ai { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; box-shadow: 0 4px 15px rgba(118, 75, 162, 0.4); }
+        .btn-ai:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(118, 75, 162, 0.6); }
+
+        /* MODAL */
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: white; padding: 30px; border-radius: 10px; width: 450px; text-align: center; }
+        input[type="password"] { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
+        .model-status { font-size: 0.85rem; margin-top: 10px; font-weight: bold; min-height: 20px; }
+        .success-text { color: var(--pos); } .error-text { color: var(--neg); }
+
+        /* PHONE & UTILS */
         #qr-box { margin: 20px auto; width: 150px; }
-        @keyframes popIn { from { transform: scale(0); } to { transform: scale(1); } }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        @media print { .top-bar, #lobby-view, .no-print { display: none !important; } .board-grid { display: block; } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        @media print {
+            .top-bar, .btn-action, .no-print, #qr-box, #host-panel, #lobby-view, .edit-icon { display: none !important; }
+            body { background: white; }
+            #ai-report-view { display: block !important; box-shadow: none; margin: 0; padding: 0; width: 100%; max-width: 100%; }
+        }
     </style>
 </head>
 <body>
 
-    <div id="host-panel" class="hidden">
+    <div id="settings-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3>🤖 Motore AI</h3>
+            <p style="font-size:0.9rem; color:#666;">Inserisci la tua API Key di Google AI Studio.<br>Il sistema cercherà automaticamente il modello <b>Flash</b> più recente.</p>
+            <input type="password" id="api-key-input" placeholder="Incolla qui la chiave API..." />
+            <button class="btn-action" onclick="detectAndSaveKey()">VERIFICA E SALVA</button>
+            <div id="model-status" class="model-status"></div>
+            <p style="font-size:0.8rem; margin-top:15px;"><a href="https://aistudio.google.com/app/apikey" target="_blank">Ottieni una chiave gratis qui</a></p>
+            <button onclick="toggleSettings()" style="background:none; border:none; color:#999; cursor:pointer; margin-top:10px;">Chiudi</button>
+        </div>
+    </div>
+
+    <div id="host-interface" class="hidden">
         <div class="top-bar">
-            <div class="brand">WORKSHOP DINAMICHE</div>
-            <div class="status-badge"><span id="conn-dot" class="dot"></span> <span id="room-id">...</span></div>
+            <div class="brand">BEHAVIORAL LAB <span style="font-weight:400; font-size:0.8em; opacity:0.7;">| AI</span></div>
+            <div class="controls">
+                <span id="room-display" style="font-size:0.9rem; font-weight:bold; background:#eee; padding:5px 10px; border-radius:15px;">...</span>
+                <button class="icon-btn" onclick="toggleSettings()" title="Impostazioni AI">⚙️</button>
+            </div>
         </div>
 
-        <div id="lobby-view" class="container">
-            <h1>Registrazione Partecipanti</h1>
-            <p>Scansionate il QR Code e inserite il vostro nome.</p>
+        <div id="lobby-view" class="container" style="text-align:center; margin-top:50px;">
+            <h1>Registrazione Team</h1>
+            <p>Scansiona il QR Code per entrare.</p>
             <div id="qr-box"></div>
-            
-            <div class="lobby-list" id="participants-list">
-                </div>
-            
-            <div id="lobby-controls" class="hidden">
-                <p style="color:#666; margin-bottom:20px;">Attendere che tutti siano connessi.</p>
-                <button class="btn-start" onclick="assignTargets()">🎯 ASSEGNA OBIETTIVI E INIZIA</button>
-            </div>
-            
-            <p id="waiting-msg" style="margin-top:20px; font-style:italic; color:#999;">In attesa del primo partecipante...</p>
+            <div id="participants-list" style="display:flex; justify-content:center; gap:10px; flex-wrap:wrap; margin:30px 0;"></div>
+            <button class="btn-action" onclick="startSession()">🎯 AVVIA SESSIONE</button>
         </div>
 
         <div id="board-view" class="container hidden">
-            <div style="text-align:center; margin-bottom:20px;">
-                <h2>Analisi Incrociata (Anonima)</h2>
-                <button onclick="window.print()" style="padding:5px 15px; cursor:pointer;" class="no-print">Stampa PDF</button>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <h2>Lavagna di Lavoro</h2>
+                <button class="btn-action btn-ai" onclick="generateManifesto()">✨ GENERA MANIFESTO TEAM</button>
             </div>
+            
             <div class="board-grid">
                 <div class="column col-left">
-                    <h3 style="text-align:center; color:var(--pos)">Ispirazioni (Da Copiare)</h3>
+                    <div class="col-title">Ispirazioni (Raw)</div>
                     <div id="col-pos"></div>
                 </div>
                 <div class="column col-right">
-                    <h3 style="text-align:center; color:var(--neg)">Sfide & Strategie</h3>
+                    <div class="col-title">Frizioni & Strategie (Raw)</div>
                     <div id="col-neg"></div>
                 </div>
             </div>
         </div>
+
+        <div id="ai-report-view" class="hidden">
+            <div class="no-print" style="text-align:right; margin-bottom:10px;">
+                <button onclick="closeReport()" style="cursor:pointer; background:none; border:none; color:#999; margin-right:15px;">✖ Torna alla lavagna</button>
+                <button class="btn-action" onclick="window.print()">🖨️ STAMPA PDF</button>
+            </div>
+            <div id="manifesto-content" class="manifesto-content">
+                <div style="text-align:center; padding:50px; color:#999;">
+                    <div style="font-size:2rem; animation: pulse 1s infinite;">🤖</div>
+                    <p>Sto analizzando i modelli disponibili e generando il manifesto...</p>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div id="phone-view" class="hidden">
+    <div id="phone-view" class="hidden" style="padding:20px; max-width:500px; margin:0 auto;">
         <div id="p-login">
-            <h2 style="text-align:center">Benvenuto</h2>
-            <p>Inserisci il tuo nome per partecipare.</p>
-            <input type="text" id="my-name" placeholder="Il tuo nome..." />
-            <button class="btn-send" onclick="joinLobby()">ENTRA NELLA STANZA</button>
+            <h2>Benvenuto</h2>
+            <input type="text" id="my-name" placeholder="Il tuo nome" style="width:100%; padding:10px; margin-bottom:10px; box-sizing:border-box;">
+            <button class="btn-action" style="width:100%" onclick="joinLobby()">ENTRA</button>
         </div>
-
-        <div id="p-wait" class="hidden" style="text-align:center; padding-top:50px;">
-            <h3>Sei dentro!</h3>
-            <p>Attendi che l'host avvii la sessione...</p>
-            <div style="font-size:3rem; margin-top:20px;">⏳</div>
+        <div id="p-wait" class="hidden" style="text-align:center; margin-top:50px;">
+            <h1>⏳</h1><p>Attendi l'avvio...</p>
         </div>
-
         <div id="p-input" class="hidden">
-            <div class="target-reveal">
-                <small>IL TUO SOGGETTO DI ANALISI È:</small>
-                <span id="target-display" class="target-name">...</span>
-                <small style="color:#666; display:block; margin-top:5px;">(Solo tu vedi questo nome)</small>
+            <div style="background:#eaf2f8; padding:15px; border-radius:8px; text-align:center; margin-bottom:20px; border:2px dashed #3498db;">
+                <small>OBIETTIVO:</small><br><strong style="font-size:1.5rem;" id="target-name">...</strong>
             </div>
-
-            <div style="background:#f9f9f9; padding:15px; border-radius:8px; margin-bottom:15px; border-left:4px solid var(--pos);">
-                <strong>1. Cosa ammiri di questa persona?</strong>
-                <p style="font-size:0.8rem; margin:5px 0;">Una qualità specifica che vorresti "rubare".</p>
-                <textarea id="admire" rows="3"></textarea>
-            </div>
-
-            <div style="background:#f9f9f9; padding:15px; border-radius:8px; margin-bottom:15px; border-left:4px solid var(--neg);">
-                <strong>2. Un comportamento difficile?</strong>
-                <p style="font-size:0.8rem; margin:5px 0;">Cosa ti crea attrito e qual è la TUA strategia per gestirlo?</p>
-                <textarea id="annoy" rows="2" placeholder="Il comportamento..."></textarea>
-                <textarea id="strategy" rows="2" placeholder="La tua strategia di risposta..." style="background:#fff0f5"></textarea>
-            </div>
-
-            <button class="btn-send" onclick="submitFeedback()">INVIA (ANONIMO)</button>
-            <p id="sent-msg" style="text-align:center; color:green; font-weight:bold; margin-top:10px;"></p>
+            <label>1. Asset (Da copiare):</label>
+            <textarea id="admire" rows="2" style="width:100%; margin-bottom:15px;"></textarea>
+            <label>2. Frizione (Problema):</label>
+            <textarea id="annoy" rows="2" style="width:100%; margin-bottom:5px;"></textarea>
+            <label style="color:#c0392b; font-size:0.8rem;">LA TUA STRATEGIA:</label>
+            <textarea id="strategy" rows="2" style="width:100%; margin-bottom:15px; border-color:#c0392b;"></textarea>
+            <button class="btn-action" style="width:100%" onclick="sendFeedback()">INVIA</button>
+        </div>
+        <div id="p-end" class="hidden" style="text-align:center; margin-top:50px;">
+            <h2>Grazie!</h2><p>Guarda lo schermo.</p>
         </div>
     </div>
 
     <script>
-        // --- CONFIGURAZIONE ---
-        const urlParams = new URLSearchParams(window.location.search);
-        let roomId = urlParams.get('room');
+        // --- CONFIG ---
+        const params = new URLSearchParams(window.location.search);
+        let roomId = params.get('room');
         const isHost = !roomId;
         let myId = localStorage.getItem('ws_uid') || Math.random().toString(36).substr(2, 9);
         localStorage.setItem('ws_uid', myId);
-
-        if (isHost) roomId = Math.floor(1000 + Math.random() * 9000).toString();
         
-        const TOPIC = `ws-v4-${roomId}`;
-        const NTFY = `https://ntfy.sh/${TOPIC}`;
-        let participants = []; // Solo Host usa questo
+        if(isHost) roomId = Math.floor(1000 + Math.random() * 9000).toString();
+        
+        const NTFY = `https://ntfy.sh/blab-v7-${roomId}`;
+        let participants = [];
+        let rawData = { pos: [], neg: [] };
 
         // --- INIT ---
-        if (isHost) initHost();
-        else initPhone();
+        if(isHost) initHost(); else initPhone();
 
         // --- HOST LOGIC ---
         function initHost() {
-            document.getElementById('host-panel').classList.remove('hidden');
-            document.getElementById('room-id').innerText = `STANZA: ${roomId}`;
-            
-            // QR Code
-            new QRCode(document.getElementById("qr-box"), {
-                text: `${window.location.origin}${window.location.pathname}?room=${roomId}`,
-                width: 150, height: 150
-            });
+            document.getElementById('host-interface').classList.remove('hidden');
+            document.getElementById('room-display').innerText = `STANZA: ${roomId}`;
+            new QRCode(document.getElementById("qr-box"), { text: window.location.href.split('?')[0] + '?room=' + roomId, width: 128, height: 128 });
 
-            // Listen for events
             const sse = new EventSource(`${NTFY}/sse`);
-            sse.onopen = () => document.getElementById('conn-dot').classList.add('active');
             sse.onmessage = (e) => {
                 try {
-                    const data = JSON.parse(e.data);
-                    if (data.event === 'message') handleHostMessage(JSON.parse(data.message));
+                    const d = JSON.parse(e.data);
+                    if(d.event === 'message') handleMsg(JSON.parse(d.message));
                 } catch(err){}
             };
         }
 
-        function handleHostMessage(msg) {
-            if (msg.type === 'join') {
-                // Evita duplicati
-                if (!participants.find(p => p.id === msg.id)) {
-                    participants.push({ name: msg.name, id: msg.id });
-                    renderLobby();
+        function handleMsg(msg) {
+            if(msg.type === 'join') {
+                if(!participants.find(p=>p.id===msg.id)) {
+                    participants.push(msg);
+                    const tag = document.createElement('span');
+                    tag.style = "background:#eee; padding:5px 15px; border-radius:20px; font-weight:bold;";
+                    tag.innerText = msg.name;
+                    document.getElementById('participants-list').appendChild(tag);
                 }
             } else if (msg.type === 'feedback') {
-                renderCard(msg);
+                renderCards(msg);
             }
         }
 
-        function renderLobby() {
-            const list = document.getElementById('participants-list');
-            list.innerHTML = participants.map(p => `<div class="participant-tag">${p.name}</div>`).join('');
-            document.getElementById('waiting-msg').classList.add('hidden');
-            if (participants.length > 1) document.getElementById('lobby-controls').classList.remove('hidden');
-        }
-
-        function assignTargets() {
-            if (participants.length < 2) return alert("Servono almeno 2 persone!");
+        function startSession() {
+            if(participants.length < 2) return alert("Servono almeno 2 persone!");
+            let pool = [...participants];
+            for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+            let pairs = {};
+            for (let i = 0; i < pool.length; i++) pairs[pool[i].id] = pool[(i + 1) % pool.length].name;
             
-            // 1. Shuffle
-            let shuffled = [...participants];
-            for (let i = shuffled.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-            }
-
-            // 2. Create Map (Circular)
-            let pairings = {};
-            for (let i = 0; i < shuffled.length; i++) {
-                let observer = shuffled[i];
-                let target = shuffled[(i + 1) % shuffled.length]; // L'ultimo osserva il primo
-                pairings[observer.id] = target.name;
-            }
-
-            // 3. Broadcast
-            fetch(NTFY, {
-                method: 'POST',
-                body: JSON.stringify({ type: 'start', pairs: pairings })
-            });
-
-            // 4. Switch View
+            fetch(NTFY, { method: 'POST', body: JSON.stringify({ type: 'start', pairs }) });
             document.getElementById('lobby-view').classList.add('hidden');
             document.getElementById('board-view').classList.remove('hidden');
         }
 
-        function renderCard(data) {
-            if (data.admire) {
+        function renderCards(data) {
+            const uid = Math.random().toString(36).substr(2, 5);
+            if(data.admire) {
+                rawData.pos.push({ id: uid, text: data.admire });
                 const div = document.createElement('div');
                 div.className = 'card card-pos';
-                div.innerText = data.admire;
+                div.innerHTML = `<span id="t-${uid}">${data.admire}</span> <span class="edit-icon" onclick="edit('${uid}', 'pos')">✏️</span>`;
                 document.getElementById('col-pos').prepend(div);
             }
-            if (data.annoy) {
+            if(data.annoy) {
+                rawData.neg.push({ id: uid, issue: data.annoy, strat: data.strategy });
                 const div = document.createElement('div');
                 div.className = 'card card-neg';
-                div.innerHTML = `<strong>${data.annoy}</strong><br><small style="color:#c0392b">STRATEGIA: ${data.strategy}</small>`;
+                div.innerHTML = `<div>${data.annoy}</div><div class="strategy-box"><span class="strategy-label">Protocollo:</span><span id="s-${uid}">${data.strategy}</span><span class="edit-icon" onclick="edit('${uid}', 'neg')">✏️</span></div>`;
                 document.getElementById('col-neg').prepend(div);
             }
         }
 
-        // --- PHONE LOGIC ---
-        function initPhone() {
-            document.getElementById('phone-view').classList.remove('hidden');
-            
-            // Listen for start
-            const sse = new EventSource(`${NTFY}/sse`);
-            sse.onmessage = (e) => {
-                try {
-                    const data = JSON.parse(e.data);
-                    if (data.event === 'message') {
-                        const msg = JSON.parse(data.message);
-                        if (msg.type === 'start') revealTarget(msg.pairs);
-                    }
-                } catch(err){}
-            };
-        }
-
-        function joinLobby() {
-            const name = document.getElementById('my-name').value.trim();
-            if (!name) return alert("Inserisci un nome");
-            
-            // Send join
-            fetch(NTFY, {
-                method: 'POST',
-                body: JSON.stringify({ type: 'join', name: name, id: myId })
-            }).then(() => {
-                document.getElementById('p-login').classList.add('hidden');
-                document.getElementById('p-wait').classList.remove('hidden');
-            });
-        }
-
-        function revealTarget(pairs) {
-            const myTarget = pairs[myId];
-            if (myTarget) {
-                document.getElementById('p-wait').classList.add('hidden');
-                document.getElementById('p-input').classList.remove('hidden');
-                document.getElementById('target-display').innerText = myTarget;
+        function edit(id, type) {
+            const el = type === 'pos' ? document.getElementById(`t-${id}`) : document.getElementById(`s-${id}`);
+            const oldVal = el.innerText;
+            const newVal = prompt("Modifica:", oldVal);
+            if(newVal && newVal !== oldVal) {
+                el.innerText = newVal;
+                if(type === 'pos') rawData.pos.find(x => x.id === id).text = newVal;
+                else rawData.neg.find(x => x.id === id).strat = newVal;
             }
         }
 
-        function submitFeedback() {
-            const btn = document.querySelector('.btn-send');
-            const data = {
-                type: 'feedback',
-                admire: document.getElementById('admire').value,
-                annoy: document.getElementById('annoy').value,
-                strategy: document.getElementById('strategy').value
+        // --- AI LOGIC (AUTO-DETECT) ---
+        function toggleSettings() { 
+            document.getElementById('settings-modal').classList.toggle('hidden'); 
+            document.getElementById('model-status').innerText = ""; 
+        }
+
+        async function detectAndSaveKey() {
+            const key = document.getElementById('api-key-input').value.trim();
+            const statusEl = document.getElementById('model-status');
+            
+            if(!key) { statusEl.innerText = "Inserisci una chiave."; return; }
+            statusEl.innerText = "🔍 Cerco il modello Flash più recente...";
+            statusEl.className = "model-status";
+
+            try {
+                // 1. Chiedi a Google la lista dei modelli
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}`);
+                if(!response.ok) throw new Error("Chiave non valida");
+                const data = await response.json();
+                
+                // 2. Filtra per "flash" e "generateContent"
+                // Esempio: gemini-1.5-flash, gemini-2.0-flash-exp, etc.
+                const flashModels = data.models.filter(m => 
+                    m.name.includes('flash') && 
+                    m.supportedGenerationMethods.includes('generateContent')
+                );
+
+                if(flashModels.length === 0) throw new Error("Nessun modello Flash trovato.");
+
+                // 3. Ordina per versione (decrescente: 2.0 prima di 1.5)
+                // Usiamo localeCompare con opzione numerica per gestire versioni tipo 1.5 vs 1.0 vs 2.0
+                flashModels.sort((a, b) => b.name.localeCompare(a.name, undefined, { numeric: true, sensitivity: 'base' }));
+
+                const bestModel = flashModels[0].name.replace('models/', ''); // Rimuove prefisso "models/"
+
+                // 4. Salva
+                localStorage.setItem('gemini_key', key);
+                localStorage.setItem('gemini_model', bestModel);
+
+                statusEl.innerText = `✅ Agganciato: ${bestModel}`;
+                statusEl.classList.add('success-text');
+                
+                setTimeout(() => toggleSettings(), 2000);
+
+            } catch(e) {
+                statusEl.innerText = "❌ Errore: " + e.message;
+                statusEl.classList.add('error-text');
+            }
+        }
+
+        async function generateManifesto() {
+            const apiKey = localStorage.getItem('gemini_key');
+            let model = localStorage.getItem('gemini_model');
+
+            if(!apiKey) return toggleSettings();
+            
+            // Fallback se non è stato fatto l'auto-detect
+            if(!model) model = "gemini-1.5-flash"; 
+
+            document.getElementById('board-view').classList.add('hidden');
+            document.getElementById('ai-report-view').classList.remove('hidden');
+
+            const prompt = `
+            You are an expert Corporate Team Coach.
+            Transform the following raw workshop data into a professional "Team Manifesto & Operational Rulebook".
+            
+            INPUT DATA:
+            Positives (Assets): ${JSON.stringify(rawData.pos.map(p => p.text))}
+            Negatives (Issues + Strategies): ${JSON.stringify(rawData.neg.map(n => ({issue: n.issue, protocol: n.strat})))}
+
+            OUTPUT FORMAT (HTML):
+            1. Title: "Team Manifesto: I Nostri Standard".
+            2. Section "Lo Standard Aureo": Take the Positives, rewrite them as inspiring "We..." statements (e.g. "Ci impegniamo a..."). Present as an unnumbered list.
+            3. Section "Protocolli Operativi (FAQ)": Take the Negatives/Strategies. Format them strictly as a FAQ style list.
+               Format: "<div class='faq-item'><span class='faq-q'>SE succede che... [behavior description]</span> <span class='faq-a'>ALLORA noi... [agreed strategy]</span></div>"
+            
+            Tone: Professional, constructive, action-oriented. Language: ITALIAN.
+            Do not include markdown code blocks like \`\`\`html. Just return the raw HTML content.
+            `;
+
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                });
+                
+                const data = await response.json();
+                const aiText = data.candidates[0].content.parts[0].text;
+                document.getElementById('manifesto-content').innerHTML = marked.parse(aiText);
+            } catch (error) {
+                document.getElementById('manifesto-content').innerHTML = `<p style='color:red; text-align:center'>Errore generazione (${model}): ${error}<br>Prova a verificare la chiave nelle impostazioni.</p>`;
+            }
+        }
+
+        function closeReport() {
+            document.getElementById('ai-report-view').classList.add('hidden');
+            document.getElementById('board-view').classList.remove('hidden');
+        }
+
+        // --- PHONE LOGIC ---
+        function initPhone() { document.getElementById('phone-view').classList.remove('hidden'); }
+        function joinLobby() {
+            const name = document.getElementById('my-name').value;
+            if(!name) return;
+            fetch(NTFY, { method: 'POST', body: JSON.stringify({ type: 'join', name, id: myId }) });
+            document.getElementById('p-login').classList.add('hidden');
+            document.getElementById('p-wait').classList.remove('hidden');
+            
+            const sse = new EventSource(`${NTFY}/sse`);
+            sse.onmessage = (e) => {
+                try {
+                    const d = JSON.parse(e.data);
+                    if(d.event === 'message') {
+                        const msg = JSON.parse(d.message);
+                        if(msg.type === 'start' && msg.pairs[myId]) {
+                            document.getElementById('target-name').innerText = msg.pairs[myId];
+                            document.getElementById('p-wait').classList.add('hidden');
+                            document.getElementById('p-input').classList.remove('hidden');
+                        }
+                    }
+                } catch(e){}
             };
-
-            if(!data.admire && !data.annoy) return alert("Compila almeno un campo");
-
-            btn.disabled = true;
-            btn.innerText = "Invio...";
-
-            fetch(NTFY, { method: 'POST', body: JSON.stringify(data) })
-            .then(() => {
-                document.getElementById('sent-msg').innerText = "Feedback Inviato!";
-                document.getElementById('p-input').innerHTML = "<h3 style='text-align:center'>Grazie del contributo.</h3><p style='text-align:center'>Guarda la lavagna.</p>";
-            });
+        }
+        function sendFeedback() {
+            const admire = document.getElementById('admire').value;
+            const annoy = document.getElementById('annoy').value;
+            const strategy = document.getElementById('strategy').value;
+            if(!admire && !annoy) return;
+            fetch(NTFY, { method: 'POST', body: JSON.stringify({ type: 'feedback', admire, annoy, strategy }) });
+            document.getElementById('p-input').classList.add('hidden');
+            document.getElementById('p-end').classList.remove('hidden');
         }
     </script>
+    <style>@keyframes pulse { 0% { opacity: 0.5; transform: scale(0.9); } 50% { opacity: 1; transform: scale(1.1); } 100% { opacity: 0.5; transform: scale(0.9); } }</style>
 </body>
 </html>
