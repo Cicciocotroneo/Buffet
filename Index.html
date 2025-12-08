@@ -3,337 +3,295 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Behavioral Design Lab</title>
+    <title>Workshop Dinamiche V4</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
-        /* --- VARIABILI & STILE BASE --- */
-        :root {
-            --bg-color: #f0f2f5;
-            --primary: #1a252f;      /* Dark Blue Corporate */
-            --accent-pos: #27ae60;   /* Professional Green */
-            --accent-neg: #c0392b;   /* Professional Red */
-            --card-bg: #ffffff;
-            --text-main: #2c3e50;
-        }
-
-        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background: var(--bg-color); margin: 0; padding: 0; color: var(--text-main); }
+        :root { --bg: #f4f6f8; --primary: #34495e; --accent: #3498db; --pos: #27ae60; --neg: #e74c3c; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 0; color: #333; }
         .hidden { display: none !important; }
 
-        /* --- HEADER & STATO --- */
-        .top-bar {
-            background: #fff; border-bottom: 1px solid #dcdcdc; padding: 12px 24px;
-            display: flex; justify-content: space-between; align-items: center;
-        }
-        .brand { font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; font-size: 0.9rem; color: var(--primary); }
-        .connection-status { font-size: 0.8rem; color: #7f8c8d; display: flex; align-items: center; }
-        .status-dot { height: 8px; width: 8px; border-radius: 50%; background: #bdc3c7; margin-right: 6px; }
-        .status-dot.active { background: var(--accent-pos); box-shadow: 0 0 4px var(--accent-pos); }
+        /* HEADER */
+        .top-bar { background: #fff; padding: 15px 30px; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center; }
+        .brand { font-weight: 700; color: var(--primary); }
+        .status-badge { background: #eee; padding: 5px 15px; border-radius: 20px; font-size: 0.85rem; display: flex; align-items: center; gap: 8px; }
+        .dot { width: 10px; height: 10px; border-radius: 50%; background: #bdc3c7; }
+        .dot.active { background: var(--pos); }
 
-        /* --- VISTA HOST (LAVAGNA) --- */
-        #screen-view { height: 92vh; display: flex; flex-direction: column; padding: 20px 40px; box-sizing: border-box; }
+        /* LAYOUTS */
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
         
-        .workshop-title { text-align: center; margin-bottom: 30px; }
-        .workshop-title h1 { margin: 0; font-size: 2rem; color: var(--primary); }
-        .workshop-title p { margin: 5px 0 0; color: #7f8c8d; font-size: 1rem; }
+        /* HOST: LOBBY */
+        #lobby-view { text-align: center; margin-top: 50px; }
+        .lobby-list { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin: 30px 0; }
+        .participant-tag { background: white; padding: 10px 20px; border-radius: 30px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); font-weight: bold; animation: popIn 0.3s ease; }
+        .btn-start { background: var(--primary); color: white; padding: 15px 40px; font-size: 1.5rem; border: none; border-radius: 50px; cursor: pointer; transition: 0.2s; }
+        .btn-start:hover { transform: scale(1.05); background: #2c3e50; }
 
-        .board-grid { display: flex; gap: 30px; flex: 1; height: 100%; overflow: hidden; }
+        /* HOST: BOARD */
+        .board-grid { display: flex; gap: 30px; margin-top: 20px; }
+        .column { flex: 1; background: white; border-radius: 10px; padding: 20px; min-height: 60vh; box-shadow: 0 5px 15px rgba(0,0,0,0.05); border-top: 5px solid #ccc; }
+        .col-left { border-top-color: var(--pos); } .col-right { border-top-color: var(--neg); }
+        .card { padding: 15px; margin-bottom: 15px; border-radius: 5px; border: 1px solid #eee; background: #fafafa; border-left-width: 5px; animation: slideUp 0.4s; }
+        .card-pos { border-left-color: var(--pos); } .card-neg { border-left-color: var(--neg); }
         
-        .column {
-            flex: 1; background: #ecf0f1; border-radius: 8px; padding: 20px;
-            display: flex; flex-direction: column; border-top: 4px solid #bdc3c7;
-        }
-        .col-pos { border-top-color: var(--accent-pos); }
-        .col-neg { border-top-color: var(--accent-neg); }
-
-        .column h2 { 
-            font-size: 1.2rem; text-transform: uppercase; letter-spacing: 1px; margin-top: 0; margin-bottom: 5px; color: var(--primary); text-align: center; 
-        }
-        .subtitle { text-align: center; font-size: 0.85rem; color: #7f8c8d; margin-bottom: 20px; font-style: italic; }
-
-        .card-stream { flex: 1; overflow-y: auto; padding-right: 10px; }
-
-        /* CARD STYLES */
-        .card {
-            background: white; padding: 16px; margin-bottom: 12px; border-radius: 4px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-left: 4px solid transparent;
-            font-size: 1rem; line-height: 1.5; animation: fadeIn 0.4s ease;
-        }
-        .card-pos { border-left-color: var(--accent-pos); }
-        .card-neg { border-left-color: var(--accent-neg); }
-
-        .protocol-box {
-            margin-top: 10px; padding-top: 10px; border-top: 1px solid #eee;
-            color: var(--primary); font-size: 0.9rem;
-        }
-        .protocol-label { 
-            font-weight: 700; font-size: 0.75rem; text-transform: uppercase; 
-            color: var(--accent-neg); display: block; margin-bottom: 2px;
-        }
-
-        /* QR & UTILS */
-        #qr-panel {
-            position: fixed; bottom: 30px; right: 30px; background: white; padding: 15px;
-            border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; z-index: 100;
-        }
-        .qr-label { font-size: 0.7rem; font-weight: bold; margin-top: 8px; color: var(--primary); letter-spacing: 1px; }
-
-        .action-btn {
-            position: fixed; bottom: 30px; left: 30px;
-            background: var(--primary); color: white; border: none; padding: 12px 20px;
-            border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.9rem;
-            display: flex; align-items: center; gap: 8px; transition: background 0.2s;
-        }
-        .action-btn:hover { background: #34495e; }
-
-        /* --- VISTA PARTECIPANTE (MOBILE) --- */
-        #phone-view { max-width: 600px; margin: 0 auto; padding: 20px; padding-bottom: 60px; }
+        /* PHONE: LOGIN & TARGET */
+        #phone-view { max-width: 500px; margin: 0 auto; background: white; min-height: 100vh; padding: 30px; box-sizing: border-box; }
+        input[type="text"] { width: 100%; padding: 15px; border: 2px solid #ddd; border-radius: 8px; font-size: 1.1rem; box-sizing: border-box; margin-bottom: 20px; }
+        .target-reveal { background: #ebf5fb; padding: 20px; border-radius: 10px; text-align: center; margin-bottom: 30px; border: 2px dashed var(--accent); }
+        .target-name { font-size: 1.8rem; font-weight: 800; color: var(--primary); display: block; margin-top: 10px; text-transform: uppercase; }
         
-        .mobile-header { text-align: center; margin-bottom: 30px; }
-        .mobile-header h2 { margin: 0; color: var(--primary); }
-        .mobile-header p { color: #7f8c8d; font-size: 0.9rem; margin-top: 5px; }
-
-        .input-group { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid #e0e0e0; }
-        .group-label { font-weight: 700; color: var(--primary); display: block; margin-bottom: 15px; border-bottom: 2px solid #f0f2f5; padding-bottom: 10px; }
+        textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; margin-bottom: 10px; font-family: inherit; }
+        .btn-send { width: 100%; padding: 15px; background: var(--accent); color: white; border: none; border-radius: 8px; font-size: 1.2rem; cursor: pointer; }
         
-        textarea {
-            width: 100%; padding: 12px; border: 1px solid #dcdcdc; border-radius: 4px;
-            font-family: inherit; font-size: 16px; margin-bottom: 10px; box-sizing: border-box; resize: vertical;
-        }
-        textarea:focus { border-color: var(--primary); outline: none; }
-
-        .sub-label { font-size: 0.85rem; font-weight: bold; color: #7f8c8d; display: block; margin-bottom: 5px; margin-top: 10px; }
-
-        .submit-btn {
-            width: 100%; padding: 16px; background: var(--accent-pos); color: white;
-            border: none; border-radius: 6px; font-size: 1.1rem; font-weight: bold; cursor: pointer;
-        }
-        .submit-btn:disabled { background: #bdc3c7; }
-
-        /* --- STAMPA (PDF) --- */
-        @media print {
-            body { background: white; }
-            .top-bar, #qr-panel, .action-btn, #phone-view { display: none !important; }
-            #screen-view { height: auto; padding: 0; display: block; }
-            .workshop-title h1 { font-size: 1.5rem; }
-            .board-grid { display: block; } /* Layout a blocchi per sicurezza o flex se il browser supporta */
-            .column { 
-                background: white; border: 1px solid #ccc; margin-bottom: 20px; 
-                page-break-inside: avoid; 
-            }
-            .card { border: 1px solid #eee; box-shadow: none; }
-            /* Forza le colonne affiancate in stampa se lo spazio lo consente */
-            .board-grid { display: flex; gap: 20px; }
-        }
-
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        /* UTILS */
+        #qr-box { margin: 20px auto; width: 150px; }
+        @keyframes popIn { from { transform: scale(0); } to { transform: scale(1); } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @media print { .top-bar, #lobby-view, .no-print { display: none !important; } .board-grid { display: block; } }
     </style>
 </head>
 <body>
 
-    <div class="top-bar" id="top-bar">
-        <div class="brand">Behavioral Design Lab</div>
-        <div class="connection-status">
-            <span id="conn-dot" class="status-dot"></span>
-            <span id="room-id-display">Connessione...</span>
-        </div>
-    </div>
-
-    <div id="screen-view" class="hidden">
-        <div class="workshop-title">
-            <h1>Analisi Dinamiche & Strategie</h1>
-            <p>Osservazione, Modellamento e Gestione delle Interazioni</p>
+    <div id="host-panel" class="hidden">
+        <div class="top-bar">
+            <div class="brand">WORKSHOP DINAMICHE</div>
+            <div class="status-badge"><span id="conn-dot" class="dot"></span> <span id="room-id">...</span></div>
         </div>
 
-        <div class="board-grid">
-            <div class="column col-pos">
-                <h2>Benchmark Positivi</h2>
-                <div class="subtitle">Asset comportamentali da acquisire</div>
-                <div class="card-stream" id="col-pos"></div>
+        <div id="lobby-view" class="container">
+            <h1>Registrazione Partecipanti</h1>
+            <p>Scansionate il QR Code e inserite il vostro nome.</p>
+            <div id="qr-box"></div>
+            
+            <div class="lobby-list" id="participants-list">
+                </div>
+            
+            <div id="lobby-controls" class="hidden">
+                <p style="color:#666; margin-bottom:20px;">Attendere che tutti siano connessi.</p>
+                <button class="btn-start" onclick="assignTargets()">🎯 ASSEGNA OBIETTIVI E INIZIA</button>
             </div>
+            
+            <p id="waiting-msg" style="margin-top:20px; font-style:italic; color:#999;">In attesa del primo partecipante...</p>
+        </div>
 
-            <div class="column col-neg">
-                <h2>Gestione delle Frizioni</h2>
-                <div class="subtitle">Comportamenti critici & Protocolli di risposta</div>
-                <div class="card-stream" id="col-neg"></div>
+        <div id="board-view" class="container hidden">
+            <div style="text-align:center; margin-bottom:20px;">
+                <h2>Analisi Incrociata (Anonima)</h2>
+                <button onclick="window.print()" style="padding:5px 15px; cursor:pointer;" class="no-print">Stampa PDF</button>
+            </div>
+            <div class="board-grid">
+                <div class="column col-left">
+                    <h3 style="text-align:center; color:var(--pos)">Ispirazioni (Da Copiare)</h3>
+                    <div id="col-pos"></div>
+                </div>
+                <div class="column col-right">
+                    <h3 style="text-align:center; color:var(--neg)">Sfide & Strategie</h3>
+                    <div id="col-neg"></div>
+                </div>
             </div>
         </div>
-
-        <div id="qr-panel">
-            <div id="qrcode"></div>
-            <div class="qr-label">SCANSIONA PER ACCEDERE</div>
-        </div>
-
-        <button class="action-btn" onclick="window.print()">
-            📄 ESPORTA REPORT PDF
-        </button>
     </div>
 
     <div id="phone-view" class="hidden">
-        <div class="mobile-header">
-            <h2>Scheda Input</h2>
-            <p>Sessione Anonima</p>
+        <div id="p-login">
+            <h2 style="text-align:center">Benvenuto</h2>
+            <p>Inserisci il tuo nome per partecipare.</p>
+            <input type="text" id="my-name" placeholder="Il tuo nome..." />
+            <button class="btn-send" onclick="joinLobby()">ENTRA NELLA STANZA</button>
         </div>
 
-        <div class="input-group" style="border-left: 4px solid var(--accent-pos);">
-            <span class="group-label">1. BENCHMARK POSITIVI</span>
-            <p style="font-size:0.85rem; color:#666; margin-bottom:10px;">Individua 2 abitudini ad alto valore aggiunto da modellare.</p>
-            <textarea id="admire1" rows="2" placeholder="Asset #1 (es. Sintesi nelle email...)"></textarea>
-            <textarea id="admire2" rows="2" placeholder="Asset #2 (es. Gestione obiezioni...)"></textarea>
+        <div id="p-wait" class="hidden" style="text-align:center; padding-top:50px;">
+            <h3>Sei dentro!</h3>
+            <p>Attendi che l'host avvii la sessione...</p>
+            <div style="font-size:3rem; margin-top:20px;">⏳</div>
         </div>
 
-        <div class="input-group" style="border-left: 4px solid var(--accent-neg);">
-            <span class="group-label">2. GESTIONE FRIZIONI</span>
-            <p style="font-size:0.85rem; color:#666; margin-bottom:10px;">Definisci il problema e la tua strategia di risposta.</p>
-            
-            <div style="margin-bottom: 15px;">
-                <span class="sub-label">A) Comportamento Critico</span>
-                <textarea id="annoy1" rows="2" placeholder="Descrivi il fattore di attrito..."></textarea>
-                <span class="sub-label" style="color:var(--accent-neg)">B) Protocollo di Risposta</span>
-                <textarea id="anti1" rows="2" placeholder="La tua strategia operativa..."></textarea>
+        <div id="p-input" class="hidden">
+            <div class="target-reveal">
+                <small>IL TUO SOGGETTO DI ANALISI È:</small>
+                <span id="target-display" class="target-name">...</span>
+                <small style="color:#666; display:block; margin-top:5px;">(Solo tu vedi questo nome)</small>
             </div>
-            <hr style="border:0; border-top:1px dashed #ddd; margin:15px 0;">
-            <div>
-                <span class="sub-label">A) Comportamento Critico</span>
-                <textarea id="annoy2" rows="2" placeholder="Descrivi il fattore di attrito..."></textarea>
-                <span class="sub-label" style="color:var(--accent-neg)">B) Protocollo di Risposta</span>
-                <textarea id="anti2" rows="2" placeholder="La tua strategia operativa..."></textarea>
-            </div>
-        </div>
 
-        <button class="submit-btn" onclick="sendData()">INVIA CONTRIBUTO</button>
-        <div id="status-msg" style="text-align:center; margin-top:15px; font-weight:bold; height:20px;"></div>
+            <div style="background:#f9f9f9; padding:15px; border-radius:8px; margin-bottom:15px; border-left:4px solid var(--pos);">
+                <strong>1. Cosa ammiri di questa persona?</strong>
+                <p style="font-size:0.8rem; margin:5px 0;">Una qualità specifica che vorresti "rubare".</p>
+                <textarea id="admire" rows="3"></textarea>
+            </div>
+
+            <div style="background:#f9f9f9; padding:15px; border-radius:8px; margin-bottom:15px; border-left:4px solid var(--neg);">
+                <strong>2. Un comportamento difficile?</strong>
+                <p style="font-size:0.8rem; margin:5px 0;">Cosa ti crea attrito e qual è la TUA strategia per gestirlo?</p>
+                <textarea id="annoy" rows="2" placeholder="Il comportamento..."></textarea>
+                <textarea id="strategy" rows="2" placeholder="La tua strategia di risposta..." style="background:#fff0f5"></textarea>
+            </div>
+
+            <button class="btn-send" onclick="submitFeedback()">INVIA (ANONIMO)</button>
+            <p id="sent-msg" style="text-align:center; color:green; font-weight:bold; margin-top:10px;"></p>
+        </div>
     </div>
 
     <script>
-        /* --- CONFIGURAZIONE --- */
+        // --- CONFIGURAZIONE ---
         const urlParams = new URLSearchParams(window.location.search);
         let roomId = urlParams.get('room');
         const isHost = !roomId;
+        let myId = localStorage.getItem('ws_uid') || Math.random().toString(36).substr(2, 9);
+        localStorage.setItem('ws_uid', myId);
 
-        if (isHost) {
-            // Genera ID sessione
-            roomId = Math.floor(1000 + Math.random() * 9000).toString();
-        }
+        if (isHost) roomId = Math.floor(1000 + Math.random() * 9000).toString();
+        
+        const TOPIC = `ws-v4-${roomId}`;
+        const NTFY = `https://ntfy.sh/${TOPIC}`;
+        let participants = []; // Solo Host usa questo
 
-        const TOPIC = `behavioral-lab-${roomId}`;
-        const NTFY_URL = `https://ntfy.sh/${TOPIC}`;
+        // --- INIT ---
+        if (isHost) initHost();
+        else initPhone();
 
-        /* --- LOGICA DI AVVIO --- */
-        if (isHost) {
-            initHost();
-        } else {
-            initParticipant();
-        }
-
+        // --- HOST LOGIC ---
         function initHost() {
-            document.getElementById('screen-view').classList.remove('hidden');
-            document.getElementById('room-id-display').innerText = `SESSIONE ID: ${roomId}`;
-
+            document.getElementById('host-panel').classList.remove('hidden');
+            document.getElementById('room-id').innerText = `STANZA: ${roomId}`;
+            
             // QR Code
-            const joinUrl = `${window.location.origin}${window.location.pathname}?room=${roomId}`;
-            new QRCode(document.getElementById("qrcode"), {
-                text: joinUrl,
-                width: 120, height: 120,
-                colorDark : "#1a252f",
-                colorLight : "#ffffff"
+            new QRCode(document.getElementById("qr-box"), {
+                text: `${window.location.origin}${window.location.pathname}?room=${roomId}`,
+                width: 150, height: 150
             });
 
-            // SSE Listener
-            const eventSource = new EventSource(`${NTFY_URL}/sse`);
-            
-            eventSource.onopen = () => {
-                document.getElementById('conn-dot').classList.add('active');
-            };
-
-            eventSource.onmessage = (event) => {
+            // Listen for events
+            const sse = new EventSource(`${NTFY}/sse`);
+            sse.onopen = () => document.getElementById('conn-dot').classList.add('active');
+            sse.onmessage = (e) => {
                 try {
-                    const data = JSON.parse(event.data);
-                    if (data.event === 'message') {
-                        const payload = JSON.parse(data.message);
-                        renderCards(payload);
-                    }
-                } catch (e) { console.error(e); }
+                    const data = JSON.parse(e.data);
+                    if (data.event === 'message') handleHostMessage(JSON.parse(data.message));
+                } catch(err){}
             };
         }
 
-        function initParticipant() {
-            document.getElementById('phone-view').classList.remove('hidden');
-            document.getElementById('top-bar').style.display = 'none'; // Nascondi top bar su mobile
+        function handleHostMessage(msg) {
+            if (msg.type === 'join') {
+                // Evita duplicati
+                if (!participants.find(p => p.id === msg.id)) {
+                    participants.push({ name: msg.name, id: msg.id });
+                    renderLobby();
+                }
+            } else if (msg.type === 'feedback') {
+                renderCard(msg);
+            }
         }
 
-        /* --- RENDERING --- */
-        function renderCards(data) {
-            if (data.a1) createCard('col-pos', data.a1, 'card-pos');
-            if (data.a2) createCard('col-pos', data.a2, 'card-pos');
+        function renderLobby() {
+            const list = document.getElementById('participants-list');
+            list.innerHTML = participants.map(p => `<div class="participant-tag">${p.name}</div>`).join('');
+            document.getElementById('waiting-msg').classList.add('hidden');
+            if (participants.length > 1) document.getElementById('lobby-controls').classList.remove('hidden');
+        }
+
+        function assignTargets() {
+            if (participants.length < 2) return alert("Servono almeno 2 persone!");
             
-            if (data.n1) createProtocolCard(data.n1, data.t1);
-            if (data.n2) createProtocolCard(data.n2, data.t2);
-        }
-
-        function createCard(colId, text, cls) {
-            if(!text || !text.trim()) return;
-            const div = document.createElement('div');
-            div.className = `card ${cls}`;
-            div.textContent = text;
-            document.getElementById(colId).prepend(div);
-        }
-
-        function createProtocolCard(issue, protocol) {
-            if(!issue || !issue.trim()) return;
-            const div = document.createElement('div');
-            div.className = `card card-neg`;
-            div.innerHTML = `
-                <div>${issue}</div>
-                <div class="protocol-box">
-                    <span class="protocol-label">Protocollo di Risposta:</span>
-                    ${protocol || "N/D"}
-                </div>
-            `;
-            document.getElementById('col-neg').prepend(div);
-        }
-
-        /* --- INVIO DATI --- */
-        function sendData() {
-            const btn = document.querySelector('.submit-btn');
-            const status = document.getElementById('status-msg');
-            
-            const payload = {
-                a1: document.getElementById('admire1').value,
-                a2: document.getElementById('admire2').value,
-                n1: document.getElementById('annoy1').value,
-                t1: document.getElementById('anti1').value,
-                n2: document.getElementById('annoy2').value,
-                t2: document.getElementById('anti2').value
-            };
-
-            if (Object.values(payload).every(val => val === "")) {
-                alert("Inserire almeno un dato per procedere.");
-                return;
+            // 1. Shuffle
+            let shuffled = [...participants];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
             }
 
-            btn.disabled = true;
-            btn.innerText = "TRASMISSIONE IN CORSO...";
+            // 2. Create Map (Circular)
+            let pairings = {};
+            for (let i = 0; i < shuffled.length; i++) {
+                let observer = shuffled[i];
+                let target = shuffled[(i + 1) % shuffled.length]; // L'ultimo osserva il primo
+                pairings[observer.id] = target.name;
+            }
 
-            fetch(NTFY_URL, {
+            // 3. Broadcast
+            fetch(NTFY, {
                 method: 'POST',
-                body: JSON.stringify(payload)
-            })
-            .then(res => {
-                if(res.ok) {
-                    status.innerText = "✔ Dati acquisiti dal sistema.";
-                    status.style.color = "var(--accent-pos)";
-                    document.querySelectorAll('textarea').forEach(t => t.value = '');
-                    window.scrollTo(0,0);
-                } else throw new Error();
-            })
-            .catch(() => {
-                status.innerText = "Errore di connessione.";
-                status.style.color = "var(--accent-neg)";
-            })
-            .finally(() => {
-                btn.disabled = false;
-                btn.innerText = "INVIA CONTRIBUTO";
-                setTimeout(() => status.innerText = '', 4000);
+                body: JSON.stringify({ type: 'start', pairs: pairings })
+            });
+
+            // 4. Switch View
+            document.getElementById('lobby-view').classList.add('hidden');
+            document.getElementById('board-view').classList.remove('hidden');
+        }
+
+        function renderCard(data) {
+            if (data.admire) {
+                const div = document.createElement('div');
+                div.className = 'card card-pos';
+                div.innerText = data.admire;
+                document.getElementById('col-pos').prepend(div);
+            }
+            if (data.annoy) {
+                const div = document.createElement('div');
+                div.className = 'card card-neg';
+                div.innerHTML = `<strong>${data.annoy}</strong><br><small style="color:#c0392b">STRATEGIA: ${data.strategy}</small>`;
+                document.getElementById('col-neg').prepend(div);
+            }
+        }
+
+        // --- PHONE LOGIC ---
+        function initPhone() {
+            document.getElementById('phone-view').classList.remove('hidden');
+            
+            // Listen for start
+            const sse = new EventSource(`${NTFY}/sse`);
+            sse.onmessage = (e) => {
+                try {
+                    const data = JSON.parse(e.data);
+                    if (data.event === 'message') {
+                        const msg = JSON.parse(data.message);
+                        if (msg.type === 'start') revealTarget(msg.pairs);
+                    }
+                } catch(err){}
+            };
+        }
+
+        function joinLobby() {
+            const name = document.getElementById('my-name').value.trim();
+            if (!name) return alert("Inserisci un nome");
+            
+            // Send join
+            fetch(NTFY, {
+                method: 'POST',
+                body: JSON.stringify({ type: 'join', name: name, id: myId })
+            }).then(() => {
+                document.getElementById('p-login').classList.add('hidden');
+                document.getElementById('p-wait').classList.remove('hidden');
+            });
+        }
+
+        function revealTarget(pairs) {
+            const myTarget = pairs[myId];
+            if (myTarget) {
+                document.getElementById('p-wait').classList.add('hidden');
+                document.getElementById('p-input').classList.remove('hidden');
+                document.getElementById('target-display').innerText = myTarget;
+            }
+        }
+
+        function submitFeedback() {
+            const btn = document.querySelector('.btn-send');
+            const data = {
+                type: 'feedback',
+                admire: document.getElementById('admire').value,
+                annoy: document.getElementById('annoy').value,
+                strategy: document.getElementById('strategy').value
+            };
+
+            if(!data.admire && !data.annoy) return alert("Compila almeno un campo");
+
+            btn.disabled = true;
+            btn.innerText = "Invio...";
+
+            fetch(NTFY, { method: 'POST', body: JSON.stringify(data) })
+            .then(() => {
+                document.getElementById('sent-msg').innerText = "Feedback Inviato!";
+                document.getElementById('p-input').innerHTML = "<h3 style='text-align:center'>Grazie del contributo.</h3><p style='text-align:center'>Guarda la lavagna.</p>";
             });
         }
     </script>
