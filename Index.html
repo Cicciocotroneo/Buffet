@@ -3,219 +3,299 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Workshop Buffett V3</title>
+    <title>Behavioral Design Lab</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
-        :root { --bg: #f4f4f9; --primary: #2c3e50; --green: #27ae60; --red: #c0392b; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 0; color: #333; }
+        /* --- VARIABILI & STILE BASE --- */
+        :root {
+            --bg-color: #f0f2f5;
+            --primary: #1a252f;      /* Dark Blue Corporate */
+            --accent-pos: #27ae60;   /* Professional Green */
+            --accent-neg: #c0392b;   /* Professional Red */
+            --card-bg: #ffffff;
+            --text-main: #2c3e50;
+        }
+
+        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background: var(--bg-color); margin: 0; padding: 0; color: var(--text-main); }
         .hidden { display: none !important; }
 
-        /* HEADER COMUNE */
-        .top-bar { background: #fff; padding: 10px; text-align: center; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center; }
-        .room-badge { background: var(--primary); color: white; padding: 5px 10px; border-radius: 5px; font-weight: bold; font-size: 0.9rem; }
-        .status-dot { height: 12px; width: 12px; background-color: #bbb; border-radius: 50%; display: inline-block; margin-right: 5px; }
-        .connected { background-color: var(--green); box-shadow: 0 0 5px var(--green); }
-        .error { background-color: var(--red); }
+        /* --- HEADER & STATO --- */
+        .top-bar {
+            background: #fff; border-bottom: 1px solid #dcdcdc; padding: 12px 24px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .brand { font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; font-size: 0.9rem; color: var(--primary); }
+        .connection-status { font-size: 0.8rem; color: #7f8c8d; display: flex; align-items: center; }
+        .status-dot { height: 8px; width: 8px; border-radius: 50%; background: #bdc3c7; margin-right: 6px; }
+        .status-dot.active { background: var(--accent-pos); box-shadow: 0 0 4px var(--accent-pos); }
 
-        /* SCHERMO HOST */
-        #screen-view { height: 90vh; display: flex; flex-direction: column; padding: 20px; }
-        .board { display: flex; gap: 20px; flex: 1; overflow: hidden; }
-        .col { flex: 1; background: #e2e8f0; border-radius: 12px; padding: 15px; display: flex; flex-direction: column; }
-        .col h2 { text-align: center; margin-top: 0; border-bottom: 2px solid #ccc; padding-bottom: 10px; }
-        .card-container { overflow-y: auto; flex: 1; }
+        /* --- VISTA HOST (LAVAGNA) --- */
+        #screen-view { height: 92vh; display: flex; flex-direction: column; padding: 20px 40px; box-sizing: border-box; }
         
-        .card { background: white; padding: 15px; margin-bottom: 10px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); animation: popIn 0.3s ease; }
-        .card-yellow { background: #fff9c4; border-left: 5px solid #fbc02d; }
-        .card-pink { background: #f8bbd0; border-left: 5px solid #e91e63; }
-        .antidote { display: block; margin-top: 5px; padding-top: 5px; border-top: 1px dashed #ad1457; color: #880e4f; font-weight: bold; font-size: 0.9em; }
+        .workshop-title { text-align: center; margin-bottom: 30px; }
+        .workshop-title h1 { margin: 0; font-size: 2rem; color: var(--primary); }
+        .workshop-title p { margin: 5px 0 0; color: #7f8c8d; font-size: 1rem; }
 
-        /* QR CODE */
-        #qr-box { position: fixed; bottom: 20px; right: 20px; background: white; padding: 10px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); text-align: center; }
+        .board-grid { display: flex; gap: 30px; flex: 1; height: 100%; overflow: hidden; }
         
-        /* LOG DEBUG */
-        #debug-log { position: fixed; bottom: 20px; left: 20px; font-size: 0.7rem; color: #666; max-width: 300px; background: rgba(255,255,255,0.8); padding: 5px; border-radius: 5px; pointer-events: none; }
+        .column {
+            flex: 1; background: #ecf0f1; border-radius: 8px; padding: 20px;
+            display: flex; flex-direction: column; border-top: 4px solid #bdc3c7;
+        }
+        .col-pos { border-top-color: var(--accent-pos); }
+        .col-neg { border-top-color: var(--accent-neg); }
 
-        /* TELEFONO */
-        #phone-view { max-width: 600px; margin: 0 auto; padding: 20px; padding-bottom: 50px;}
-        textarea { width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 8px; margin-bottom: 10px; box-sizing: border-box; font-family: inherit; }
-        .section { background: white; padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #eee; }
-        .label { font-weight: bold; display: block; margin-bottom: 5px; color: var(--primary); }
-        .btn { width: 100%; padding: 15px; background: var(--green); color: white; border: none; border-radius: 8px; font-size: 1.2rem; font-weight: bold; cursor: pointer; }
-        .btn:disabled { opacity: 0.5; }
+        .column h2 { 
+            font-size: 1.2rem; text-transform: uppercase; letter-spacing: 1px; margin-top: 0; margin-bottom: 5px; color: var(--primary); text-align: center; 
+        }
+        .subtitle { text-align: center; font-size: 0.85rem; color: #7f8c8d; margin-bottom: 20px; font-style: italic; }
 
-        @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .card-stream { flex: 1; overflow-y: auto; padding-right: 10px; }
+
+        /* CARD STYLES */
+        .card {
+            background: white; padding: 16px; margin-bottom: 12px; border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-left: 4px solid transparent;
+            font-size: 1rem; line-height: 1.5; animation: fadeIn 0.4s ease;
+        }
+        .card-pos { border-left-color: var(--accent-pos); }
+        .card-neg { border-left-color: var(--accent-neg); }
+
+        .protocol-box {
+            margin-top: 10px; padding-top: 10px; border-top: 1px solid #eee;
+            color: var(--primary); font-size: 0.9rem;
+        }
+        .protocol-label { 
+            font-weight: 700; font-size: 0.75rem; text-transform: uppercase; 
+            color: var(--accent-neg); display: block; margin-bottom: 2px;
+        }
+
+        /* QR & UTILS */
+        #qr-panel {
+            position: fixed; bottom: 30px; right: 30px; background: white; padding: 15px;
+            border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; z-index: 100;
+        }
+        .qr-label { font-size: 0.7rem; font-weight: bold; margin-top: 8px; color: var(--primary); letter-spacing: 1px; }
+
+        .action-btn {
+            position: fixed; bottom: 30px; left: 30px;
+            background: var(--primary); color: white; border: none; padding: 12px 20px;
+            border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.9rem;
+            display: flex; align-items: center; gap: 8px; transition: background 0.2s;
+        }
+        .action-btn:hover { background: #34495e; }
+
+        /* --- VISTA PARTECIPANTE (MOBILE) --- */
+        #phone-view { max-width: 600px; margin: 0 auto; padding: 20px; padding-bottom: 60px; }
+        
+        .mobile-header { text-align: center; margin-bottom: 30px; }
+        .mobile-header h2 { margin: 0; color: var(--primary); }
+        .mobile-header p { color: #7f8c8d; font-size: 0.9rem; margin-top: 5px; }
+
+        .input-group { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid #e0e0e0; }
+        .group-label { font-weight: 700; color: var(--primary); display: block; margin-bottom: 15px; border-bottom: 2px solid #f0f2f5; padding-bottom: 10px; }
+        
+        textarea {
+            width: 100%; padding: 12px; border: 1px solid #dcdcdc; border-radius: 4px;
+            font-family: inherit; font-size: 16px; margin-bottom: 10px; box-sizing: border-box; resize: vertical;
+        }
+        textarea:focus { border-color: var(--primary); outline: none; }
+
+        .sub-label { font-size: 0.85rem; font-weight: bold; color: #7f8c8d; display: block; margin-bottom: 5px; margin-top: 10px; }
+
+        .submit-btn {
+            width: 100%; padding: 16px; background: var(--accent-pos); color: white;
+            border: none; border-radius: 6px; font-size: 1.1rem; font-weight: bold; cursor: pointer;
+        }
+        .submit-btn:disabled { background: #bdc3c7; }
+
+        /* --- STAMPA (PDF) --- */
+        @media print {
+            body { background: white; }
+            .top-bar, #qr-panel, .action-btn, #phone-view { display: none !important; }
+            #screen-view { height: auto; padding: 0; display: block; }
+            .workshop-title h1 { font-size: 1.5rem; }
+            .board-grid { display: block; } /* Layout a blocchi per sicurezza o flex se il browser supporta */
+            .column { 
+                background: white; border: 1px solid #ccc; margin-bottom: 20px; 
+                page-break-inside: avoid; 
+            }
+            .card { border: 1px solid #eee; box-shadow: none; }
+            /* Forza le colonne affiancate in stampa se lo spazio lo consente */
+            .board-grid { display: flex; gap: 20px; }
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
 
-    <div class="top-bar">
-        <div><span id="conn-dot" class="status-dot"></span> <span id="conn-text" style="font-size:0.8rem">Connessione...</span></div>
-        <div class="room-badge">STANZA: <span id="room-display">...</span></div>
+    <div class="top-bar" id="top-bar">
+        <div class="brand">Behavioral Design Lab</div>
+        <div class="connection-status">
+            <span id="conn-dot" class="status-dot"></span>
+            <span id="room-id-display">Connessione...</span>
+        </div>
     </div>
 
     <div id="screen-view" class="hidden">
-        <h1 style="text-align:center; margin: 0 0 20px 0; color: var(--primary);">L'Avatar e lo Specchio</h1>
-        <div class="board">
-            <div class="col">
-                <h2>🌟 Qualità da Copiare</h2>
-                <div class="card-container" id="cont-admire"></div>
+        <div class="workshop-title">
+            <h1>Analisi Dinamiche & Strategie</h1>
+            <p>Osservazione, Modellamento e Gestione delle Interazioni</p>
+        </div>
+
+        <div class="board-grid">
+            <div class="column col-pos">
+                <h2>Benchmark Positivi</h2>
+                <div class="subtitle">Asset comportamentali da acquisire</div>
+                <div class="card-stream" id="col-pos"></div>
             </div>
-            <div class="col">
-                <h2>⛔ Antidoti ai Difetti</h2>
-                <div class="card-container" id="cont-annoy"></div>
+
+            <div class="column col-neg">
+                <h2>Gestione delle Frizioni</h2>
+                <div class="subtitle">Comportamenti critici & Protocolli di risposta</div>
+                <div class="card-stream" id="col-neg"></div>
             </div>
         </div>
-        <div id="qr-box">
+
+        <div id="qr-panel">
             <div id="qrcode"></div>
-            <div style="font-size:0.8rem; margin-top:5px">Scansiona per entrare</div>
+            <div class="qr-label">SCANSIONA PER ACCEDERE</div>
         </div>
-        <div id="debug-log">In attesa di eventi...</div>
+
+        <button class="action-btn" onclick="window.print()">
+            📄 ESPORTA REPORT PDF
+        </button>
     </div>
 
     <div id="phone-view" class="hidden">
-        <p style="text-align:center; font-size:0.9rem; color:#666;">I tuoi dati sono anonimi.</p>
-        
-        <div class="section" style="border-left: 5px solid #fbc02d;">
-            <span class="label">🌟 2 Qualità che ammiri</span>
-            <textarea id="admire1" rows="2" placeholder="Es: Mantiene la calma..."></textarea>
-            <textarea id="admire2" rows="2" placeholder="Es: Ascolta senza interrompere..."></textarea>
+        <div class="mobile-header">
+            <h2>Scheda Input</h2>
+            <p>Sessione Anonima</p>
         </div>
 
-        <div class="section" style="border-left: 5px solid #e91e63;">
-            <span class="label">⛔ 2 Comportamenti e Antidoti</span>
-            <hr style="border:0; border-top:1px dashed #eee; margin:10px 0;">
-            <textarea id="annoy1" rows="2" placeholder="Comportamento fastidioso..."></textarea>
-            <textarea id="anti1" rows="2" placeholder="🛡️ Il tuo Antidoto: come reagirai?" style="background:#fff0f5"></textarea>
+        <div class="input-group" style="border-left: 4px solid var(--accent-pos);">
+            <span class="group-label">1. BENCHMARK POSITIVI</span>
+            <p style="font-size:0.85rem; color:#666; margin-bottom:10px;">Individua 2 abitudini ad alto valore aggiunto da modellare.</p>
+            <textarea id="admire1" rows="2" placeholder="Asset #1 (es. Sintesi nelle email...)"></textarea>
+            <textarea id="admire2" rows="2" placeholder="Asset #2 (es. Gestione obiezioni...)"></textarea>
+        </div>
+
+        <div class="input-group" style="border-left: 4px solid var(--accent-neg);">
+            <span class="group-label">2. GESTIONE FRIZIONI</span>
+            <p style="font-size:0.85rem; color:#666; margin-bottom:10px;">Definisci il problema e la tua strategia di risposta.</p>
             
-            <hr style="border:0; border-top:1px dashed #eee; margin:10px 0;">
-            <textarea id="annoy2" rows="2" placeholder="Comportamento fastidioso..."></textarea>
-            <textarea id="anti2" rows="2" placeholder="🛡️ Il tuo Antidoto: come reagirai?" style="background:#fff0f5"></textarea>
+            <div style="margin-bottom: 15px;">
+                <span class="sub-label">A) Comportamento Critico</span>
+                <textarea id="annoy1" rows="2" placeholder="Descrivi il fattore di attrito..."></textarea>
+                <span class="sub-label" style="color:var(--accent-neg)">B) Protocollo di Risposta</span>
+                <textarea id="anti1" rows="2" placeholder="La tua strategia operativa..."></textarea>
+            </div>
+            <hr style="border:0; border-top:1px dashed #ddd; margin:15px 0;">
+            <div>
+                <span class="sub-label">A) Comportamento Critico</span>
+                <textarea id="annoy2" rows="2" placeholder="Descrivi il fattore di attrito..."></textarea>
+                <span class="sub-label" style="color:var(--accent-neg)">B) Protocollo di Risposta</span>
+                <textarea id="anti2" rows="2" placeholder="La tua strategia operativa..."></textarea>
+            </div>
         </div>
 
-        <button class="btn" onclick="sendData()">INVIA ALLA LAVAGNA</button>
-        <p id="phone-status" style="text-align:center; margin-top:10px; font-weight:bold;"></p>
+        <button class="submit-btn" onclick="sendData()">INVIA CONTRIBUTO</button>
+        <div id="status-msg" style="text-align:center; margin-top:15px; font-weight:bold; height:20px;"></div>
     </div>
 
     <script>
-        // --- GESTIONE ID STANZA ---
+        /* --- CONFIGURAZIONE --- */
         const urlParams = new URLSearchParams(window.location.search);
         let roomId = urlParams.get('room');
         const isHost = !roomId;
 
-        // Se non c'è stanza, ne creiamo una (HOST)
-        if (!roomId) {
-            roomId = Math.floor(1000 + Math.random() * 9000).toString(); // ID numerico semplice a 4 cifre
+        if (isHost) {
+            // Genera ID sessione
+            roomId = Math.floor(1000 + Math.random() * 9000).toString();
         }
 
-        // Mostra ID stanza in alto
-        document.getElementById('room-display').innerText = roomId;
-
-        // Configurazione NTFY (Server Pubblico)
-        // Usiamo un prefisso lungo per evitare collisioni con altri utenti nel mondo
-        const TOPIC = `buffett-workshop-v3-${roomId}`;
+        const TOPIC = `behavioral-lab-${roomId}`;
         const NTFY_URL = `https://ntfy.sh/${TOPIC}`;
 
-        // LOGGING
-        function log(msg) {
-            console.log(msg);
-            if(isHost) {
-                const box = document.getElementById('debug-log');
-                box.innerText = msg;
-                setTimeout(() => box.innerText = "In attesa...", 5000);
-            }
-        }
-
-        function setStatus(state, msg) {
-            const dot = document.getElementById('conn-dot');
-            const text = document.getElementById('conn-text');
-            text.innerText = msg;
-            dot.className = 'status-dot'; // reset
-            if (state === 'ok') dot.classList.add('connected');
-            if (state === 'error') dot.classList.add('error');
-        }
-
-        // --- AVVIO APP ---
+        /* --- LOGICA DI AVVIO --- */
         if (isHost) {
             initHost();
         } else {
-            initPhone();
+            initParticipant();
         }
 
-        // --- LOGICA HOST (SCHERMO) ---
         function initHost() {
             document.getElementById('screen-view').classList.remove('hidden');
-            
-            // Genera QR Code
+            document.getElementById('room-id-display').innerText = `SESSIONE ID: ${roomId}`;
+
+            // QR Code
             const joinUrl = `${window.location.origin}${window.location.pathname}?room=${roomId}`;
             new QRCode(document.getElementById("qrcode"), {
                 text: joinUrl,
-                width: 128, height: 128
+                width: 120, height: 120,
+                colorDark : "#1a252f",
+                colorLight : "#ffffff"
             });
 
-            // Connessione SSE (Ricezione Dati)
-            log("Connessione a ntfy...");
+            // SSE Listener
             const eventSource = new EventSource(`${NTFY_URL}/sse`);
-
+            
             eventSource.onopen = () => {
-                setStatus('ok', 'Connesso e in ascolto');
-                log("Canale aperto: " + TOPIC);
-            };
-
-            eventSource.onerror = (e) => {
-                setStatus('error', 'Errore connessione');
-                log("Errore di rete. Riconnessione...");
+                document.getElementById('conn-dot').classList.add('active');
             };
 
             eventSource.onmessage = (event) => {
                 try {
                     const data = JSON.parse(event.data);
-                    // Ignoriamo eventi di sistema
-                    if (data.event !== 'message') return;
-
-                    log("Messaggio ricevuto!");
-                    const payload = JSON.parse(data.message);
-                    renderCards(payload);
-                } catch (e) {
-                    log("Errore parsing dati: " + e.message);
-                }
+                    if (data.event === 'message') {
+                        const payload = JSON.parse(data.message);
+                        renderCards(payload);
+                    }
+                } catch (e) { console.error(e); }
             };
         }
 
-        function renderCards(data) {
-            // Render Ammirevoli
-            if (data.a1) addCard('cont-admire', data.a1, 'card-yellow');
-            if (data.a2) addCard('cont-admire', data.a2, 'card-yellow');
-
-            // Render Fastidiosi
-            if (data.n1) addAnnoyCard(data.n1, data.t1);
-            if (data.n2) addAnnoyCard(data.n2, data.t2);
+        function initParticipant() {
+            document.getElementById('phone-view').classList.remove('hidden');
+            document.getElementById('top-bar').style.display = 'none'; // Nascondi top bar su mobile
         }
 
-        function addCard(containerId, text, cls) {
+        /* --- RENDERING --- */
+        function renderCards(data) {
+            if (data.a1) createCard('col-pos', data.a1, 'card-pos');
+            if (data.a2) createCard('col-pos', data.a2, 'card-pos');
+            
+            if (data.n1) createProtocolCard(data.n1, data.t1);
+            if (data.n2) createProtocolCard(data.n2, data.t2);
+        }
+
+        function createCard(colId, text, cls) {
             if(!text || !text.trim()) return;
             const div = document.createElement('div');
             div.className = `card ${cls}`;
             div.textContent = text;
-            document.getElementById(containerId).prepend(div);
+            document.getElementById(colId).prepend(div);
         }
 
-        function addAnnoyCard(desc, anti) {
-            if(!desc || !desc.trim()) return;
+        function createProtocolCard(issue, protocol) {
+            if(!issue || !issue.trim()) return;
             const div = document.createElement('div');
-            div.className = `card card-pink`;
-            div.innerHTML = `<strong>${desc}</strong><span class="antidote">🛡️ ${anti || '...'}</span>`;
-            document.getElementById('cont-annoy').prepend(div);
+            div.className = `card card-neg`;
+            div.innerHTML = `
+                <div>${issue}</div>
+                <div class="protocol-box">
+                    <span class="protocol-label">Protocollo di Risposta:</span>
+                    ${protocol || "N/D"}
+                </div>
+            `;
+            document.getElementById('col-neg').prepend(div);
         }
 
-        // --- LOGICA PARTECIPANTE (TELEFONO) ---
-        function initPhone() {
-            document.getElementById('phone-view').classList.remove('hidden');
-            setStatus('ok', 'Pronto per inviare');
-        }
-
+        /* --- INVIO DATI --- */
         function sendData() {
-            const btn = document.querySelector('.btn');
-            const status = document.getElementById('phone-status');
+            const btn = document.querySelector('.submit-btn');
+            const status = document.getElementById('status-msg');
             
             const payload = {
                 a1: document.getElementById('admire1').value,
@@ -226,40 +306,34 @@
                 t2: document.getElementById('anti2').value
             };
 
-            // Validazione minima
             if (Object.values(payload).every(val => val === "")) {
-                alert("Scrivi almeno qualcosa!");
+                alert("Inserire almeno un dato per procedere.");
                 return;
             }
 
             btn.disabled = true;
-            btn.innerText = "Invio in corso...";
+            btn.innerText = "TRASMISSIONE IN CORSO...";
 
-            // Invio via POST semplice (text/plain per evitare preflight CORS complessi)
             fetch(NTFY_URL, {
                 method: 'POST',
-                body: JSON.stringify(payload),
-                headers: {
-                    'Title': 'Workshop Data' // Header opzionale per ntfy
-                }
+                body: JSON.stringify(payload)
             })
             .then(res => {
                 if(res.ok) {
-                    status.innerText = "✅ Inviato! Guarda lo schermo.";
-                    status.style.color = "green";
+                    status.innerText = "✔ Dati acquisiti dal sistema.";
+                    status.style.color = "var(--accent-pos)";
                     document.querySelectorAll('textarea').forEach(t => t.value = '');
                     window.scrollTo(0,0);
-                } else {
-                    throw new Error("Server ha risposto: " + res.status);
-                }
+                } else throw new Error();
             })
-            .catch(err => {
-                status.innerText = "❌ Errore: " + err.message;
-                status.style.color = "red";
+            .catch(() => {
+                status.innerText = "Errore di connessione.";
+                status.style.color = "var(--accent-neg)";
             })
             .finally(() => {
                 btn.disabled = false;
-                btn.innerText = "INVIA ALLA LAVAGNA";
+                btn.innerText = "INVIA CONTRIBUTO";
+                setTimeout(() => status.innerText = '', 4000);
             });
         }
     </script>
