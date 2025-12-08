@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Behavioral Lab V8 - Final</title>
-    <script src="[https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js](https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js)"></script>
+    <title>Behavioral Lab V8.1 - Fixed</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root { --bg: #f0f2f5; --primary: #2c3e50; --accent: #3498db; --pos: #27ae60; --neg: #c0392b; }
         body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin: 0; padding: 0; color: #333; }
@@ -36,7 +36,7 @@
         
         .manifesto-content { 
             line-height: 1.6; color: #444; 
-            outline: 2px dashed #eee; /* Visual cue that it's editable */
+            outline: 2px dashed #eee; 
             padding: 10px;
             border-radius: 5px;
         }
@@ -65,17 +65,18 @@
         .model-status { font-size: 0.85rem; margin-top: 10px; font-weight: bold; min-height: 20px; }
         .success-text { color: var(--pos); } .error-text { color: var(--neg); }
 
+        /* QR CODE FIX */
+        #qr-box { margin: 20px auto; display: flex; justify-content: center; padding: 10px; background: white; border-radius: 10px; width: fit-content; }
+        #qr-box img { display: block; } /* Assicura che l'immagine generata sia visibile */
+
         /* PHONE & UTILS */
-        #qr-box { margin: 20px auto; width: 150px; }
         @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
         @media print {
-            .top-bar, .btn-action, .no-print, #qr-box, #host-panel, #lobby-view, .edit-icon, .close-btn { display: none !important; }
+            .top-bar, .btn-action, .no-print, #qr-box, #host-interface > div:not(#ai-report-view), .edit-icon, .close-btn { display: none !important; }
             body { background: white; margin: 0; padding: 0; }
             #ai-report-view { display: block !important; box-shadow: none; margin: 0; padding: 0; width: 100%; max-width: 100%; }
-            .manifesto-content { outline: none; border: none; } /* Rimuove i bordi di edit in stampa */
-            .manifesto-content h1 { font-size: 24pt; }
-            .faq-item { break-inside: avoid; }
+            .manifesto-content { outline: none; border: none; }
         }
     </style>
 </head>
@@ -88,7 +89,7 @@
             <input type="password" id="api-key-input" placeholder="Incolla qui la chiave API..." />
             <button class="btn-action" onclick="detectAndSaveKey()">VERIFICA E SALVA</button>
             <div id="model-status" class="model-status"></div>
-            <p style="font-size:0.8rem; margin-top:15px;"><a href="[https://aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)" target="_blank">Ottieni una chiave gratis qui</a></p>
+            <p style="font-size:0.8rem; margin-top:15px;"><a href="https://aistudio.google.com/app/apikey" target="_blank">Ottieni una chiave gratis qui</a></p>
             <button onclick="toggleSettings()" style="background:none; border:none; color:#999; cursor:pointer; margin-top:10px;">Chiudi</button>
         </div>
     </div>
@@ -105,7 +106,9 @@
         <div id="lobby-view" class="container" style="text-align:center; margin-top:50px;">
             <h1>Registrazione Team</h1>
             <p>Scansiona il QR Code per entrare.</p>
+            
             <div id="qr-box"></div>
+            
             <div id="participants-list" style="display:flex; justify-content:center; gap:10px; flex-wrap:wrap; margin:30px 0;"></div>
             <button class="btn-action" onclick="startSession()">🎯 AVVIA SESSIONE</button>
         </div>
@@ -193,7 +196,16 @@
         function initHost() {
             document.getElementById('host-interface').classList.remove('hidden');
             document.getElementById('room-display').innerText = `STANZA: ${roomId}`;
-            new QRCode(document.getElementById("qr-box"), { text: window.location.href.split('?')[0] + '?room=' + roomId, width: 128, height: 128 });
+            
+            // Assicuriamoci che il container sia vuoto prima di creare il QR
+            const qrContainer = document.getElementById("qr-box");
+            qrContainer.innerHTML = "";
+            
+            new QRCode(qrContainer, { 
+                text: window.location.href.split('?')[0] + '?room=' + roomId, 
+                width: 150, 
+                height: 150 
+            });
 
             const sse = new EventSource(`${NTFY}/sse`);
             sse.onmessage = (e) => {
@@ -259,7 +271,7 @@
             }
         }
 
-        // --- AI LOGIC (AUTO-DETECT + CLEANING) ---
+        // --- AI LOGIC ---
         function toggleSettings() { 
             document.getElementById('settings-modal').classList.toggle('hidden'); 
             document.getElementById('model-status').innerText = ""; 
@@ -340,10 +352,7 @@
                 
                 const data = await response.json();
                 let aiText = data.candidates[0].content.parts[0].text;
-                
-                // PULIZIA AGGRESSIVA: Rimuove eventuali backticks rimasti
                 aiText = aiText.replace(/```html/g, '').replace(/```/g, '');
-
                 document.getElementById('manifesto-content').innerHTML = aiText;
             } catch (error) {
                 document.getElementById('manifesto-content').innerHTML = `<p style='color:red; text-align:center'>Errore generazione (${model}): ${error}<br>Controlla la chiave API.</p>`;
