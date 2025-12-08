@@ -3,322 +3,263 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Workshop: L'Effetto Buffett</title>
+    <title>Workshop Buffett V3</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
-        /* --- STILI GENERALI --- */
-        :root {
-            --bg-color: #f4f4f9;
-            --primary: #2c3e50;
-            --yellow-note: #fff9c4;
-            --yellow-border: #fbc02d;
-            --pink-note: #f8bbd0;
-            --pink-border: #e91e63;
-            --green-btn: #27ae60;
-        }
-
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg-color); margin: 0; padding: 0; color: #333; }
+        :root { --bg: #f4f4f9; --primary: #2c3e50; --green: #27ae60; --red: #c0392b; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 0; color: #333; }
         .hidden { display: none !important; }
 
-        /* --- VISTA SCHERMO (HOST) --- */
-        #screen-view {
-            display: flex; flex-direction: column; height: 100vh; padding: 20px; box-sizing: border-box;
-        }
-        
-        .header { text-align: center; margin-bottom: 20px; }
-        .header h1 { margin: 0; color: var(--primary); }
-        .header p { margin: 5px 0 0; color: #666; }
+        /* HEADER COMUNE */
+        .top-bar { background: #fff; padding: 10px; text-align: center; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center; }
+        .room-badge { background: var(--primary); color: white; padding: 5px 10px; border-radius: 5px; font-weight: bold; font-size: 0.9rem; }
+        .status-dot { height: 12px; width: 12px; background-color: #bbb; border-radius: 50%; display: inline-block; margin-right: 5px; }
+        .connected { background-color: var(--green); box-shadow: 0 0 5px var(--green); }
+        .error { background-color: var(--red); }
 
+        /* SCHERMO HOST */
+        #screen-view { height: 90vh; display: flex; flex-direction: column; padding: 20px; }
         .board { display: flex; gap: 20px; flex: 1; overflow: hidden; }
+        .col { flex: 1; background: #e2e8f0; border-radius: 12px; padding: 15px; display: flex; flex-direction: column; }
+        .col h2 { text-align: center; margin-top: 0; border-bottom: 2px solid #ccc; padding-bottom: 10px; }
+        .card-container { overflow-y: auto; flex: 1; }
         
-        .column {
-            flex: 1; background: #e2e8f0; border-radius: 15px; padding: 15px;
-            display: flex; flex-direction: column; box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
-        }
+        .card { background: white; padding: 15px; margin-bottom: 10px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); animation: popIn 0.3s ease; }
+        .card-yellow { background: #fff9c4; border-left: 5px solid #fbc02d; }
+        .card-pink { background: #f8bbd0; border-left: 5px solid #e91e63; }
+        .antidote { display: block; margin-top: 5px; padding-top: 5px; border-top: 1px dashed #ad1457; color: #880e4f; font-weight: bold; font-size: 0.9em; }
+
+        /* QR CODE */
+        #qr-box { position: fixed; bottom: 20px; right: 20px; background: white; padding: 10px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); text-align: center; }
         
-        .column h2 { 
-            text-align: center; color: var(--primary); margin-top: 0; 
-            border-bottom: 2px solid #cbd5e1; padding-bottom: 10px; font-size: 1.4rem; 
-        }
+        /* LOG DEBUG */
+        #debug-log { position: fixed; bottom: 20px; left: 20px; font-size: 0.7rem; color: #666; max-width: 300px; background: rgba(255,255,255,0.8); padding: 5px; border-radius: 5px; pointer-events: none; }
 
-        .cards-container { flex: 1; overflow-y: auto; padding-right: 5px; }
+        /* TELEFONO */
+        #phone-view { max-width: 600px; margin: 0 auto; padding: 20px; padding-bottom: 50px;}
+        textarea { width: 100%; padding: 10px; border: 2px solid #ddd; border-radius: 8px; margin-bottom: 10px; box-sizing: border-box; font-family: inherit; }
+        .section { background: white; padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #eee; }
+        .label { font-weight: bold; display: block; margin-bottom: 5px; color: var(--primary); }
+        .btn { width: 100%; padding: 15px; background: var(--green); color: white; border: none; border-radius: 8px; font-size: 1.2rem; font-weight: bold; cursor: pointer; }
+        .btn:disabled { opacity: 0.5; }
 
-        /* Stile Post-it */
-        .card {
-            padding: 15px; margin-bottom: 12px; border-radius: 8px; 
-            box-shadow: 0 3px 6px rgba(0,0,0,0.1); 
-            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            font-size: 1.15rem; line-height: 1.4; position: relative;
-        }
-
-        .card-yellow { background-color: var(--yellow-note); border-left: 6px solid var(--yellow-border); }
-        .card-pink { background-color: var(--pink-note); border-left: 6px solid var(--pink-border); }
-
-        .antidote {
-            display: block; margin-top: 10px; padding-top: 10px;
-            border-top: 1px dashed rgba(0,0,0,0.2);
-            color: #880e4f; font-weight: bold; font-size: 0.95em;
-        }
-        .antidote::before { content: "🛡️ Antidoto: "; }
-
-        /* Box QR Code fluttuante */
-        #qr-box {
-            position: fixed; bottom: 30px; right: 30px;
-            background: white; padding: 15px; border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            text-align: center; z-index: 1000;
-        }
-        #qrcode img { margin: 0 auto; }
-        .qr-label { font-size: 0.9rem; font-weight: bold; margin-top: 8px; color: var(--primary); }
-
-        /* --- VISTA PARTECIPANTE (MOBILE) --- */
-        #phone-view {
-            max-width: 600px; margin: 0 auto; min-height: 100vh;
-            background: white; padding: 25px; box-sizing: border-box;
-            box-shadow: 0 0 20px rgba(0,0,0,0.05);
-        }
-
-        #phone-view h2 { text-align: center; color: var(--primary); margin-top: 0; }
-        .intro-text { text-align: center; color: #666; font-size: 0.9rem; margin-bottom: 25px; }
-
-        .form-section {
-            background: #fff; border: 1px solid #e0e0e0; border-radius: 10px;
-            padding: 15px; margin-bottom: 20px;
-        }
-        .bg-yellow { background-color: #fffde7; border-color: #fff9c4; }
-        .bg-pink { background-color: #fce4ec; border-color: #f8bbd0; }
-
-        label { display: block; font-weight: bold; margin-bottom: 6px; color: var(--primary); font-size: 0.95rem; }
-        .sub-label { display: block; font-size: 0.85rem; color: #880e4f; margin-bottom: 6px; font-weight: bold; }
-
-        textarea {
-            width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px;
-            font-family: inherit; font-size: 1rem; box-sizing: border-box; resize: vertical;
-            transition: border-color 0.2s;
-        }
-        textarea:focus { outline: none; border-color: #3498db; }
-
-        .btn-submit {
-            width: 100%; background-color: var(--green-btn); color: white;
-            padding: 18px; font-size: 1.2rem; font-weight: bold; border: none;
-            border-radius: 10px; cursor: pointer; transition: transform 0.1s, opacity 0.2s;
-        }
-        .btn-submit:active { transform: scale(0.98); }
-        .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
-
-        #status-msg { text-align: center; margin-top: 15px; font-weight: bold; min-height: 24px; }
-
-        @keyframes popIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+        @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
     </style>
 </head>
 <body>
 
-    <div id="screen-view" class="hidden">
-        <div class="header">
-            <h1>L'Avatar e lo Specchio</h1>
-            <p>Scansiona il QR Code per partecipare • Stanza: <strong id="room-id-display">...</strong></p>
-        </div>
-        
-        <div class="board">
-            <div class="column">
-                <h2>🌟 Qualità da "Rubare"</h2>
-                <div id="col-admire" class="cards-container"></div>
-            </div>
-            
-            <div class="column">
-                <h2>⛔ Ostacoli e Antidoti</h2>
-                <div id="col-annoy" class="cards-container"></div>
-            </div>
-        </div>
+    <div class="top-bar">
+        <div><span id="conn-dot" class="status-dot"></span> <span id="conn-text" style="font-size:0.8rem">Connessione...</span></div>
+        <div class="room-badge">STANZA: <span id="room-display">...</span></div>
+    </div>
 
+    <div id="screen-view" class="hidden">
+        <h1 style="text-align:center; margin: 0 0 20px 0; color: var(--primary);">L'Avatar e lo Specchio</h1>
+        <div class="board">
+            <div class="col">
+                <h2>🌟 Qualità da Copiare</h2>
+                <div class="card-container" id="cont-admire"></div>
+            </div>
+            <div class="col">
+                <h2>⛔ Antidoti ai Difetti</h2>
+                <div class="card-container" id="cont-annoy"></div>
+            </div>
+        </div>
         <div id="qr-box">
             <div id="qrcode"></div>
-            <div class="qr-label">SCANSIONA<br>PER ENTRARE</div>
+            <div style="font-size:0.8rem; margin-top:5px">Scansiona per entrare</div>
         </div>
+        <div id="debug-log">In attesa di eventi...</div>
     </div>
 
     <div id="phone-view" class="hidden">
-        <h2>La Tua Scheda</h2>
-        <p class="intro-text">I tuoi input sono anonimi. Sii sincero e costruttivo.</p>
-
-        <div class="form-section bg-yellow">
-            <label>🌟 2 Qualità che ammiri negli altri</label>
-            <textarea id="admire1" rows="2" placeholder="1. Descrivi la qualità..."></textarea>
-            <div style="height:10px"></div>
-            <textarea id="admire2" rows="2" placeholder="2. Descrivi la qualità..."></textarea>
+        <p style="text-align:center; font-size:0.9rem; color:#666;">I tuoi dati sono anonimi.</p>
+        
+        <div class="section" style="border-left: 5px solid #fbc02d;">
+            <span class="label">🌟 2 Qualità che ammiri</span>
+            <textarea id="admire1" rows="2" placeholder="Es: Mantiene la calma..."></textarea>
+            <textarea id="admire2" rows="2" placeholder="Es: Ascolta senza interrompere..."></textarea>
         </div>
 
-        <div class="form-section bg-pink">
-            <label>⛔ 2 Ostacoli e i tuoi Antidoti</label>
-            <hr style="border:0; border-top:1px solid rgba(0,0,0,0.1); margin:10px 0;">
+        <div class="section" style="border-left: 5px solid #e91e63;">
+            <span class="label">⛔ 2 Comportamenti e Antidoti</span>
+            <hr style="border:0; border-top:1px dashed #eee; margin:10px 0;">
+            <textarea id="annoy1" rows="2" placeholder="Comportamento fastidioso..."></textarea>
+            <textarea id="anti1" rows="2" placeholder="🛡️ Il tuo Antidoto: come reagirai?" style="background:#fff0f5"></textarea>
             
-            <span class="sub-label" style="color:#333">Comportamento Fastidioso 1:</span>
-            <textarea id="annoy1" rows="2" placeholder="Cosa fanno che ti infastidisce?"></textarea>
-            <span class="sub-label">🛡️ Il tuo Antidoto (Come reagirai?):</span>
-            <textarea id="anti1" rows="2" placeholder="La tua strategia di difesa..." style="background: white; border-color: #f48fb1;"></textarea>
-            
-            <hr style="border:0; border-top:1px dashed rgba(0,0,0,0.2); margin:15px 0;">
-
-            <span class="sub-label" style="color:#333">Comportamento Fastidioso 2:</span>
-            <textarea id="annoy2" rows="2" placeholder="Cosa fanno che ti infastidisce?"></textarea>
-            <span class="sub-label">🛡️ Il tuo Antidoto (Come reagirai?):</span>
-            <textarea id="anti2" rows="2" placeholder="La tua strategia di difesa..." style="background: white; border-color: #f48fb1;"></textarea>
+            <hr style="border:0; border-top:1px dashed #eee; margin:10px 0;">
+            <textarea id="annoy2" rows="2" placeholder="Comportamento fastidioso..."></textarea>
+            <textarea id="anti2" rows="2" placeholder="🛡️ Il tuo Antidoto: come reagirai?" style="background:#fff0f5"></textarea>
         </div>
 
-        <button class="btn-submit" onclick="sendData()">INVIA ALLA LAVAGNA</button>
-        <div id="status-msg"></div>
+        <button class="btn" onclick="sendData()">INVIA ALLA LAVAGNA</button>
+        <p id="phone-status" style="text-align:center; margin-top:10px; font-weight:bold;"></p>
     </div>
 
     <script>
-        // --- LOGICA APPLICAZIONE ---
-        
-        // Determina se siamo Host o Partecipante in base all'URL
+        // --- GESTIONE ID STANZA ---
         const urlParams = new URLSearchParams(window.location.search);
         let roomId = urlParams.get('room');
-        
-        // Se non c'è "room" nell'URL, siamo l'HOST. Creiamo un ID univoco.
+        const isHost = !roomId;
+
+        // Se non c'è stanza, ne creiamo una (HOST)
         if (!roomId) {
-            // Genera un ID stanza casuale (es. ws-9382)
-            roomId = 'ws-' + Math.floor(1000 + Math.random() * 9000);
-            initHostMode();
-        } else {
-            initParticipantMode();
+            roomId = Math.floor(1000 + Math.random() * 9000).toString(); // ID numerico semplice a 4 cifre
         }
 
-        // Endpoint di ntfy.sh (servizio pubblico gratuito per messaggistica)
-        // Usiamo un topic univoco basato sull'ID della stanza
-        const NTFY_TOPIC = `buffett-workshop-${roomId}`;
-        const NTFY_URL = `https://ntfy.sh/${NTFY_TOPIC}`;
+        // Mostra ID stanza in alto
+        document.getElementById('room-display').innerText = roomId;
 
-        // --- FUNZIONI HOST ---
-        function initHostMode() {
+        // Configurazione NTFY (Server Pubblico)
+        // Usiamo un prefisso lungo per evitare collisioni con altri utenti nel mondo
+        const TOPIC = `buffett-workshop-v3-${roomId}`;
+        const NTFY_URL = `https://ntfy.sh/${TOPIC}`;
+
+        // LOGGING
+        function log(msg) {
+            console.log(msg);
+            if(isHost) {
+                const box = document.getElementById('debug-log');
+                box.innerText = msg;
+                setTimeout(() => box.innerText = "In attesa...", 5000);
+            }
+        }
+
+        function setStatus(state, msg) {
+            const dot = document.getElementById('conn-dot');
+            const text = document.getElementById('conn-text');
+            text.innerText = msg;
+            dot.className = 'status-dot'; // reset
+            if (state === 'ok') dot.classList.add('connected');
+            if (state === 'error') dot.classList.add('error');
+        }
+
+        // --- AVVIO APP ---
+        if (isHost) {
+            initHost();
+        } else {
+            initPhone();
+        }
+
+        // --- LOGICA HOST (SCHERMO) ---
+        function initHost() {
             document.getElementById('screen-view').classList.remove('hidden');
-            document.getElementById('room-id-display').innerText = roomId;
-
-            // 1. Genera il QR Code
-            // Prende l'URL corrente (senza parametri) e aggiunge ?room=ID
-            const baseUrl = window.location.href.split('?')[0];
-            const joinUrl = `${baseUrl}?room=${roomId}`;
             
+            // Genera QR Code
+            const joinUrl = `${window.location.origin}${window.location.pathname}?room=${roomId}`;
             new QRCode(document.getElementById("qrcode"), {
                 text: joinUrl,
-                width: 140,
-                height: 140,
-                colorDark : "#2c3e50",
-                colorLight : "#ffffff",
-                correctLevel : QRCode.CorrectLevel.H
+                width: 128, height: 128
             });
 
-            console.log("In ascolto su:", NTFY_URL);
-
-            // 2. Connettiti a ntfy.sh per ricevere messaggi (Server-Sent Events)
+            // Connessione SSE (Ricezione Dati)
+            log("Connessione a ntfy...");
             const eventSource = new EventSource(`${NTFY_URL}/sse`);
-            
+
+            eventSource.onopen = () => {
+                setStatus('ok', 'Connesso e in ascolto');
+                log("Canale aperto: " + TOPIC);
+            };
+
+            eventSource.onerror = (e) => {
+                setStatus('error', 'Errore connessione');
+                log("Errore di rete. Riconnessione...");
+            };
+
             eventSource.onmessage = (event) => {
                 try {
-                    // ntfy invia eventi di sistema, ci interessa solo l'evento 'message'
                     const data = JSON.parse(event.data);
-                    if (data.event === 'message') {
-                        // Il payload vero è dentro data.message
-                        const workshopData = JSON.parse(data.message);
-                        renderCards(workshopData);
-                    }
+                    // Ignoriamo eventi di sistema
+                    if (data.event !== 'message') return;
+
+                    log("Messaggio ricevuto!");
+                    const payload = JSON.parse(data.message);
+                    renderCards(payload);
                 } catch (e) {
-                    // Ignora messaggi di keepalive o errori di parsing
-                    console.log("Ping o errore parsing:", e);
+                    log("Errore parsing dati: " + e.message);
                 }
             };
         }
 
         function renderCards(data) {
-            // Render Qualità Ammirate
-            if(data.admire1) createCard('col-admire', data.admire1, 'card-yellow');
-            if(data.admire2) createCard('col-admire', data.admire2, 'card-yellow');
+            // Render Ammirevoli
+            if (data.a1) addCard('cont-admire', data.a1, 'card-yellow');
+            if (data.a2) addCard('cont-admire', data.a2, 'card-yellow');
 
-            // Render Fastidi + Antidoti
-            if(data.annoy1 && data.anti1) createAntidoteCard('col-annoy', data.annoy1, data.anti1);
-            if(data.annoy2 && data.anti2) createAntidoteCard('col-annoy', data.annoy2, data.anti2);
+            // Render Fastidiosi
+            if (data.n1) addAnnoyCard(data.n1, data.t1);
+            if (data.n2) addAnnoyCard(data.n2, data.t2);
         }
 
-        function createCard(colId, text, cssClass) {
-            if(!text.trim()) return;
-            const container = document.getElementById(colId);
-            const card = document.createElement('div');
-            card.className = `card ${cssClass}`;
-            card.textContent = text;
-            container.prepend(card); // Aggiunge in cima
+        function addCard(containerId, text, cls) {
+            if(!text || !text.trim()) return;
+            const div = document.createElement('div');
+            div.className = `card ${cls}`;
+            div.textContent = text;
+            document.getElementById(containerId).prepend(div);
         }
 
-        function createAntidoteCard(colId, problem, antidote) {
-            if(!problem.trim() || !antidote.trim()) return;
-            const container = document.getElementById(colId);
-            const card = document.createElement('div');
-            card.className = 'card card-pink';
-            card.innerHTML = `
-                <strong>${problem}</strong>
-                <span class="antidote">${antidote}</span>
-            `;
-            container.prepend(card);
+        function addAnnoyCard(desc, anti) {
+            if(!desc || !desc.trim()) return;
+            const div = document.createElement('div');
+            div.className = `card card-pink`;
+            div.innerHTML = `<strong>${desc}</strong><span class="antidote">🛡️ ${anti || '...'}</span>`;
+            document.getElementById('cont-annoy').prepend(div);
         }
 
-        // --- FUNZIONI PARTECIPANTE ---
-        function initParticipantMode() {
+        // --- LOGICA PARTECIPANTE (TELEFONO) ---
+        function initPhone() {
             document.getElementById('phone-view').classList.remove('hidden');
+            setStatus('ok', 'Pronto per inviare');
         }
 
         function sendData() {
-            const btn = document.querySelector('.btn-submit');
-            const status = document.getElementById('status-msg');
-
-            // Raccogli i dati
+            const btn = document.querySelector('.btn');
+            const status = document.getElementById('phone-status');
+            
             const payload = {
-                admire1: document.getElementById('admire1').value,
-                admire2: document.getElementById('admire2').value,
-                annoy1: document.getElementById('annoy1').value,
-                anti1: document.getElementById('anti1').value,
-                annoy2: document.getElementById('annoy2').value,
-                anti2: document.getElementById('anti2').value,
+                a1: document.getElementById('admire1').value,
+                a2: document.getElementById('admire2').value,
+                n1: document.getElementById('annoy1').value,
+                t1: document.getElementById('anti1').value,
+                n2: document.getElementById('annoy2').value,
+                t2: document.getElementById('anti2').value
             };
 
-            // Validazione semplice: almeno un campo deve essere pieno
-            const isEmpty = Object.values(payload).every(x => x.trim() === '');
-            if(isEmpty) {
-                status.innerText = "⚠️ Scrivi almeno un pensiero prima di inviare.";
-                status.style.color = "#d35400";
+            // Validazione minima
+            if (Object.values(payload).every(val => val === "")) {
+                alert("Scrivi almeno qualcosa!");
                 return;
             }
 
-            // UI Loading
             btn.disabled = true;
             btn.innerText = "Invio in corso...";
-            status.innerText = "";
 
-            // Invio dati via POST a ntfy.sh
+            // Invio via POST semplice (text/plain per evitare preflight CORS complessi)
             fetch(NTFY_URL, {
                 method: 'POST',
-                body: JSON.stringify(payload) // Inviamo il JSON come stringa nel corpo del messaggio
+                body: JSON.stringify(payload),
+                headers: {
+                    'Title': 'Workshop Data' // Header opzionale per ntfy
+                }
             })
-            .then(response => {
-                if (response.ok) {
-                    status.innerText = "✅ Inviato con successo! Guarda lo schermo.";
+            .then(res => {
+                if(res.ok) {
+                    status.innerText = "✅ Inviato! Guarda lo schermo.";
                     status.style.color = "green";
-                    // Pulisci i campi dopo l'invio
                     document.querySelectorAll('textarea').forEach(t => t.value = '');
                     window.scrollTo(0,0);
                 } else {
-                    throw new Error("Errore server");
+                    throw new Error("Server ha risposto: " + res.status);
                 }
             })
-            .catch(error => {
-                status.innerText = "❌ Errore di connessione. Riprova.";
+            .catch(err => {
+                status.innerText = "❌ Errore: " + err.message;
                 status.style.color = "red";
-                console.error(error);
             })
             .finally(() => {
                 btn.disabled = false;
                 btn.innerText = "INVIA ALLA LAVAGNA";
-                // Rimuovi messaggio successo dopo 5 secondi
-                setTimeout(() => { if(status.style.color === 'green') status.innerText = ''; }, 5000);
             });
         }
     </script>
